@@ -17,6 +17,7 @@ export const busy = signal('');
 export const buildInfo = signal(null);
 export const syncErrors = signal({});
 export const updateReady = signal(false);
+export const ready = signal(false);
 export const sw = { registration: null };
 
 export function applyUpdate() {
@@ -122,6 +123,7 @@ export async function init() {
     .catch(() => {});
   if (navigator.storage?.persist) navigator.storage.persist().catch(() => {});
   if (!isConfigured() && route.value.name !== 'setup') navigate('#/setup');
+  ready.value = true;
 }
 
 export async function refresh({ quiet = false } = {}) {

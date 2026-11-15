@@ -15,3 +15,5 @@
 - No automated render smoke test for the editor (it needs a DOM and the spec forbids new dependencies); the editor was exercised by hand in a browser against a seeded IndexedDB trip (expand, rate, drag across sections, undo, toggle) with no page errors.
 - Dragging uses `newDraggableIndex` and puts the dragged node back with `item.remove()` before `insertBefore` so same-list moves revert correctly.
 - Editor "Add stop" navigates to the Capture screen in search mode (`#/capture/<tripId>~<sectionId>`), implemented in Phase 5.
+- Editor screens render only after local data has loaded (`ready` signal), so opening the app straight on `#/capture` never mistakes an empty store for "no trips".
+- Capture: choosing "New trip…" creates a log titled "<city> trip" from the first selected place (or "New trip") and makes it the active trip.
