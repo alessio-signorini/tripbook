@@ -8,4 +8,4 @@
 - [x] Phase 5 — Capture
 - [x] Phase 6 — Settings, analytics, PWA
 - [x] Phase 7 — Workflows, template, scripts, docs
-- [ ] Phase 8 — Final verification
+- [x] Phase 8 — Final verification

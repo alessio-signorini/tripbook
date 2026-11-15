@@ -66,7 +66,7 @@ test('Draft guide: noindex, no analytics, hidden low row, toggle off, numbering,
 test('Analytics only when ID is set, and never on drafts', () => {
   const withId = mergeConfig({ ...config, google_analytics_id: 'G-TEST123' });
   assert.doesNotMatch(page(pisa()), /gtag/);
-  assert.match(page(pisa(), { cfg: withId }), /gtag\('config','G-TEST123'\)/);
+  assert.match(page(pisa(), { cfg: withId }), /gtag\('config',"G-TEST123"\)/);
   assert.doesNotMatch(page(layover(), { draft: true, cfg: withId }), /gtag/);
 });
 
