@@ -1,0 +1,37 @@
+{
+  "v": 1,
+  "id": "santa-barbara-perfect-day",
+  "slug": "perfect-day",
+  "kind": "log",
+  "title": "A perfect day in Santa Barbara",
+  "note": "One easy day around town.",
+  "lang": "en",
+  "location": { "country": "United States", "country_code": "US", "region": "California", "city": "Santa Barbara" },
+  "old_paths": [],
+  "sections": [
+    {
+      "id": "s-1",
+      "title": "Downtown",
+      "note": "Walkable; park once.",
+      "style": "list",
+      "auto_date": "2026-03-14",
+      "stops": [
+        { "id": "p-1", "place_id": null, "name": "Santa Barbara County Courthouse", "address": "1100 Anacapa St, Santa Barbara, CA", "city": "Santa Barbara", "region": "California", "country": "United States", "country_code": "US", "lat": 34.4241, "lng": -119.7024, "coords_source": "device", "minutes": 30, "leg_to_next": null, "note": "Climb the clock tower for the view.", "rating": 4, "captured_at": "2026-03-14T17:12:00Z" },
+        { "id": "p-2", "place_id": null, "name": "Old Mission Santa Barbara", "address": "2201 Laguna St, Santa Barbara, CA", "city": "Santa Barbara", "region": "California", "country": "United States", "country_code": "US", "lat": 34.4383, "lng": -119.7139, "coords_source": "device", "minutes": 60, "leg_to_next": null, "note": "", "rating": 5, "captured_at": "2026-03-14T19:40:00Z" }
+      ]
+    },
+    {
+      "id": "s-2",
+      "title": "Waterfront",
+      "note": "",
+      "style": "list",
+      "auto_date": "2026-03-15",
+      "stops": [
+        { "id": "p-3", "place_id": null, "name": "Stearns Wharf", "address": "217 Stearns Wharf, Santa Barbara, CA", "city": "Santa Barbara", "region": "California", "country": "United States", "country_code": "US", "lat": 34.41, "lng": -119.6853, "coords_source": "device", "minutes": 45, "leg_to_next": null, "note": "", "rating": 3, "captured_at": "2026-03-15T18:05:00Z" },
+        { "id": "p-4", "place_id": null, "name": "Butterfly Beach", "address": "Butterfly Ln, Santa Barbara, CA", "city": "Santa Barbara", "region": "California", "country": "United States", "country_code": "US", "lat": 34.418, "lng": -119.6375, "coords_source": "device", "minutes": null, "leg_to_next": null, "note": "Crowded on weekends.", "rating": 2, "captured_at": "2026-03-15T20:30:00Z" }
+      ]
+    }
+  ],
+  "created_at": "2026-03-14T17:00:00Z",
+  "updated_at": "2026-03-15T21:00:00Z"
+}

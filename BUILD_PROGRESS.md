@@ -1,7 +1,7 @@
 # Build progress
 
 - [x] Phase 0 — Devcontainer
-- [ ] Phase 1 — Scaffold and shared modules
+- [x] Phase 1 — Scaffold and shared modules
 - [ ] Phase 2 — Site build and public site
 - [ ] Phase 3 — Editor foundations: build, storage, GitHub, sync
 - [ ] Phase 4 — Trip editor and drag and drop
