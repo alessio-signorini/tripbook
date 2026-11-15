@@ -218,3 +218,28 @@ export function structural(id, message, fn) {
   updateTrip(id, fn);
   toast(message, { label: 'Undo', fn: () => updateTrip(id, (t) => Object.assign(t, snapshot)) }, 6000);
 }
+
+/* ---------- config.json ---------- */
+export async function pushConfig(cfg, sha) {
+  const newSha = await gh().putFile('config.json', cfg, sha, 'Config: update');
+  const rec = { config: cfg, sha: newSha };
+  configRec.value = rec;
+  await saveConfigRecord(rec);
+}
+
+export async function pullConfig() {
+  const f = await gh().getFile('config.json');
+  const rec = f ? { config: f.data, sha: f.sha } : { config: {}, sha: null };
+  configRec.value = rec;
+  await saveConfigRecord(rec);
+  return rec;
+}
+
+export async function rebuildSite() {
+  try {
+    await gh().dispatchRebuild();
+    toast('Rebuild started. The site updates in about a minute.');
+  } catch (e) {
+    toast(e.message);
+  }
+}

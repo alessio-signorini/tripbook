@@ -52,4 +52,6 @@ test('manifest has start_url "/" and the 404 redirects to /', async () => {
   assert.equal(m.start_url, '/');
   assert.equal(m.display, 'standalone');
   assert.match(await readFile(join(out, '404.html'), 'utf8'), /url=\//);
+  for (const icon of m.icons) assert.ok(existsSync(join(out, icon.src.slice(1))), icon.src);
+  assert.ok(existsSync(join(out, 'icons/apple-touch-icon.png')));
 });

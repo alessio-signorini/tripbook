@@ -1,5 +1,5 @@
 import { html, Toasts, ModalHost } from './ui.js';
-import { route, dirtyCount, updateReady, isConfigured, applyUpdate, ready } from './state.js';
+import { route, dirtyCount, updateReady, isConfigured, applyUpdate, ready, configRec } from './state.js';
 import { Setup } from './Setup.js';
 import { Trips } from './Trips.js';
 import { Settings } from './Settings.js';
@@ -13,7 +13,7 @@ function Screen() {
   if (r.name === 'setup' || !isConfigured()) return html`<${Setup} />`;
   if (r.name === 'trip') return html`<${TripEditor} id=${r.id} key=${r.id} />`;
   if (r.name === 'capture') return html`<${Capture} addTo=${r.add_to} key=${r.add_to || 'capture'} />`;
-  if (r.name === 'settings') return html`<${Settings} />`;
+  if (r.name === 'settings') return html`<${Settings} key=${configRec.value.sha} />`;
   return html`<${Trips} />`;
 }
 
