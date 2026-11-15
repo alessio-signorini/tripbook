@@ -7,5 +7,5 @@
 - [x] Phase 4 — Trip editor and drag and drop
 - [x] Phase 5 — Capture
 - [x] Phase 6 — Settings, analytics, PWA
-- [ ] Phase 7 — Workflows, template, scripts, docs
+- [x] Phase 7 — Workflows, template, scripts, docs
 - [ ] Phase 8 — Final verification

@@ -17,3 +17,6 @@
 - Editor "Add stop" navigates to the Capture screen in search mode (`#/capture/<tripId>~<sectionId>`), implemented in Phase 5.
 - Editor screens render only after local data has loaded (`ready` signal), so opening the app straight on `#/capture` never mistakes an empty store for "no trips".
 - Capture: choosing "New trip…" creates a log titled "<city> trip" from the first selected place (or "New trip") and makes it the active trip.
+- Workflow action majors (`checkout@v5`, `setup-node@v5`, `configure-pages@v5`, `upload-pages-artifact@v4`, `deploy-pages@v4`) all exist, so they are used as listed.
+- `create-data-repo.sh` checks the `workflow` scope through the `X-OAuth-Scopes` header; tokens that do not report scopes (such as fine-grained ones) are asked to run `gh auth refresh -s workflow`.
+- LICENSE copyright holder is "Alessio Signorini" (from the GitHub account name); change it if you prefer another name.
