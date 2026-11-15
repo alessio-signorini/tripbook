@@ -12,3 +12,6 @@
 - `github.js` treats a 422 whose message mentions `sha` or `does not match`, and any 409, as a conflict.
 - The `getFile` helper returns `{ data, sha }` (or `null` on 404) and `putFile` returns the new sha; `ConflictError` is raised for sha mismatches.
 - The service worker only skips waiting when the page posts `skip-waiting` (the "Update available" toast), so a running session is never swapped under the user.
+- No automated render smoke test for the editor (it needs a DOM and the spec forbids new dependencies); the editor was exercised by hand in a browser against a seeded IndexedDB trip (expand, rate, drag across sections, undo, toggle) with no page errors.
+- Dragging uses `newDraggableIndex` and puts the dragged node back with `item.remove()` before `insertBefore` so same-list moves revert correctly.
+- Editor "Add stop" navigates to the Capture screen in search mode (`#/capture/<tripId>~<sectionId>`), implemented in Phase 5.

@@ -48,12 +48,12 @@ export function Setup() {
     <label class="field"><span>Data repo</span>
       <input type="text" placeholder="you/trips" value=${slug} autocapitalize="none" autocomplete="off" onInput=${(e) => { setSlug(e.target.value); setResult(null); }} />
     </label>
-    <label class="field"><span>Token</span>
+    <div class="field"><span>Token</span>
       <div class="row">
-        <input type=${show ? 'text' : 'password'} value=${token} autocomplete="off" onInput=${(e) => { setToken(e.target.value); setResult(null); }} />
+        <input type=${show ? 'text' : 'password'} aria-label="Token" value=${token} autocomplete="off" onInput=${(e) => { setToken(e.target.value); setResult(null); }} />
         <button class="btn" type="button" onClick=${() => setShow(!show)}>${show ? 'Hide' : 'Show'}</button>
       </div>
-    </label>
+    </div>
     <p class="hint">Create a fine-grained token at <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com/settings/personal-access-tokens/new</a>.
       Repository access: only your data repo. Contents: Read and write. Optional Actions: Read and write (for the Rebuild button).</p>
     <div class="row">

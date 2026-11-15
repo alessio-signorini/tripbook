@@ -207,3 +207,12 @@ export async function autoRetry() {
   const rec = id && trips.value.get(id);
   if (rec && rec.dirty && rec.auto_sync && isConfigured() && navigator.onLine && !busy.value) await run(id, 'Sync', syncTrip);
 }
+
+/** A structural change (move, delete, add section) with a 6 s Undo toast. */
+export function structural(id, message, fn) {
+  const rec = trips.value.get(id);
+  if (!rec) return;
+  const snapshot = structuredClone(rec.trip);
+  updateTrip(id, fn);
+  toast(message, { label: 'Undo', fn: () => updateTrip(id, (t) => Object.assign(t, snapshot)) }, 6000);
+}
