@@ -1,0 +1,73 @@
+import { readFile, readdir, rm, mkdir, writeFile, cp } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { join, dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { execSync } from 'node:child_process';
+import { bundleJs, bundleCss, hash } from './bundle.mjs';
+
+const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
+
+function commit() {
+  if (process.env.GITHUB_SHA) return process.env.GITHUB_SHA.slice(0, 7);
+  try {
+    return execSync('git rev-parse --short HEAD', { cwd: root, stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim() || 'dev';
+  } catch {
+    return 'dev';
+  }
+}
+
+async function listFiles(dir, prefix = '') {
+  const out = [];
+  for (const e of await readdir(dir, { withFileTypes: true })) {
+    if (e.isDirectory()) out.push(...(await listFiles(join(dir, e.name), `${prefix}${e.name}/`)));
+    else out.push(`${prefix}${e.name}`);
+  }
+  return out;
+}
+
+export async function buildEditor({ out, log = console.log }) {
+  const pkg = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'));
+  await rm(out, { recursive: true, force: true });
+  await mkdir(out, { recursive: true });
+  const src = join(root, 'src/editor');
+
+  const js = await bundleJs(join(src, 'main.js'), out, 'app');
+  const css = await bundleCss(join(src, 'editor.css'), out, 'editor');
+  const tripJs = await bundleJs(join(root, 'src/site/trip.js'), join(out, 'preview'), 'trip');
+  const siteCss = await bundleCss(join(root, 'src/site/site.css'), join(out, 'preview'), 'site');
+
+  const index = (await readFile(join(src, 'index.html'), 'utf8')).replace('{{CSS}}', css).replace('{{JS}}', js);
+  await writeFile(join(out, 'index.html'), index);
+  await cp(join(src, 'manifest.webmanifest'), join(out, 'manifest.webmanifest'));
+  if (existsSync(join(src, 'icons'))) await cp(join(src, 'icons'), join(out, 'icons'), { recursive: true });
+
+  const build = { version: pkg.version, commit: commit(), preview: { trip_js: `preview/${tripJs}`, site_css: `preview/${siteCss}` } };
+  await writeFile(join(out, 'build.json'), JSON.stringify(build, null, 2) + '\n');
+  await writeFile(join(out, '404.html'), '<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=/"><script>location.replace("/")</script>\n');
+
+  const files = (await listFiles(out)).filter((f) => f !== 'sw.js' && f !== '404.html' && !f.endsWith('.map')).sort();
+  const shell = ['/', ...files.map((f) => `/${f}`)];
+  const version = hash(files.join('\n'));
+  const sw = (await readFile(join(src, 'sw.js'), 'utf8')).replace('__CACHE_VERSION__', `tripbook-${version}`).replace('__SHELL__', JSON.stringify(shell, null, 2));
+  await writeFile(join(out, 'sw.js'), sw);
+
+  log(`Built editor ${build.version} (${build.commit}): ${files.length + 1} files`);
+  return build;
+}
+
+function arg(name) {
+  const i = process.argv.indexOf(`--${name}`);
+  return i > -1 ? process.argv[i + 1] : undefined;
+}
+
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const out = arg('out');
+  if (!out) {
+    console.error('Usage: build-editor.mjs --out <dir>');
+    process.exit(2);
+  }
+  buildEditor({ out: resolve(out) }).catch((e) => {
+    console.error(e.message);
+    process.exit(1);
+  });
+}

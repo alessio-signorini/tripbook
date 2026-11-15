@@ -8,3 +8,7 @@
 - A leg connector is shown only when the stop and the next stop in the original order are both visible, so a hidden stop never leaves a wrong leg between two visible ones.
 - `buildSite()` is exported from `build-site.mjs` so tests call it directly; the CLI runs only when the file is the entry point.
 - Google Maps bootstrap loader lives in `src/shared/maps-loader.js` so the site and the editor share it.
+- Trip records carry an extra `auto_sync` flag, set after the first Sync press, so automatic retries only touch trips the user has synced before.
+- `github.js` treats a 422 whose message mentions `sha` or `does not match`, and any 409, as a conflict.
+- The `getFile` helper returns `{ data, sha }` (or `null` on 404) and `putFile` returns the new sha; `ConflictError` is raised for sha mismatches.
+- The service worker only skips waiting when the page posts `skip-waiting` (the "Update available" toast), so a running session is never swapped under the user.
