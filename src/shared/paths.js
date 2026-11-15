@@ -31,3 +31,12 @@ export function findCollisions(items) {
   }
   return errors;
 }
+
+/** Like listingPrefixes, with a display name for each: [{ path, name }]. */
+export function listingCrumbs(trip, config) {
+  const loc = trip.location || {};
+  const names = [loc.country];
+  if (slugify(loc.region)) names.push(loc.region);
+  if (slugify(loc.city)) names.push(loc.city);
+  return listingPrefixes(trip, config).map((path, i) => ({ path, name: names[i] }));
+}

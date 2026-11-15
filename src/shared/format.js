@@ -20,3 +20,20 @@ export function sectionLetter(i) {
 export function totalMinutes(stops) {
   return stops.reduce((sum, s) => sum + (s.minutes || 0), 0);
 }
+
+export function escapeHtml(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+/** "Pisa, Italy" / "Santa Barbara, California, United States"; empty parts skipped. */
+export function locationText(loc = {}) {
+  return [loc.city, loc.region, loc.country].filter(Boolean).join(', ');
+}
+
+export const kindLabel = (kind) => (kind === 'guide' ? 'Guide' : 'Trip log');
+
+export const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
