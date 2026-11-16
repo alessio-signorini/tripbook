@@ -57,13 +57,12 @@ export function stopDirectionsUrl(stop) {
 
 /**
  * The "Open in Google Maps" target for the on-route visible stops (off-route ones are excluded):
- * the shortlist when every stop has a place_id (and fits), else the first directions URL, which
- * also covers coordinate-only stops.
+ * walking directions through every stop in order, so the user can press Start. Routes beyond
+ * 11 stops are split (see directionsUrl); this returns the first part, and the per-section
+ * "Part N" links cover the rest. A single stop opens directions to it.
  * Returns { url }.
  */
 export function openInMaps(routeStops) {
-  const list = shortlistUrl(routeStops);
-  if (list && shortlistCount(routeStops) === routeStops.length) return { url: list };
   const dir = directionsUrl(routeStops);
   const url = Array.isArray(dir) ? dir[0] : dir;
   if (url) return { url };

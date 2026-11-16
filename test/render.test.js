@@ -31,7 +31,7 @@ test('Pisa page: stops, numbers, legs, notes, stars', () => {
 });
 
 test('Pisa page has no low-rated toggle', () => {
-  assert.doesNotMatch(page(pisa()), /low-toggle/);
+  assert.doesNotMatch(page(pisa()), /id="low-toggle"/);
 });
 
 test('Santa Barbara log: no dates leak, low stop visible, toggle checked, empty note renders nothing', () => {
@@ -115,6 +115,10 @@ test('off-route stop: bullet badge, no number, no leg around it, excluded from r
   assert.deepEqual([...html.matchAll(/<span class="badge-num">(\d+)<\/span>/g)].map((m) => m[1]), ['1', '2', '3', '4', '5', '6']);
   assert.match(html, /<li class="leg" data-after="p-2" hidden/);
   assert.match(html, /<li class="leg" data-after="p-3" hidden/);
-  assert.doesNotMatch(html.match(/class="route-link" href="([^"]+)"/)[1], /43\.7135/);
+  assert.doesNotMatch(html.match(/data-open-maps href="([^"]+)"/)[1], /43\.7135/);
   assert.match(html, /data-stop="p-3"[\s\S]*?Directions to Corso Italia/);
+});
+
+test('Pisa guide has an off-path toggle, on by default', () => {
+  assert.match(page(pisa()), /id="off-toggle" checked/);
 });

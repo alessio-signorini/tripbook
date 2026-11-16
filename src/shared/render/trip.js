@@ -49,7 +49,7 @@ function sectionBlock(sec, multi) {
     ? `<span class="sec-count">${esc(plural(sec.count, 'stop'))}</span>` +
       `<span class="sec-time"${sec.minutes ? '' : ' hidden'}>${esc(formatMinutes(sec.minutes))}</span>`
     : '';
-  const links = section.style === 'route' ? `<span class="route-links" data-route-links="${esc(section.id)}">${routeLinks(sec.routeStops)}</span>` : '';
+  const links = multi && section.style === 'route' ? `<span class="route-links" data-route-links="${esc(section.id)}">${routeLinks(sec.routeStops)}</span>` : '';
   const note = section.note && section.note.trim() ? `<div class="sec-note md clamp">${renderMarkdown(section.note)}</div>` : '';
   return (
     `<section class="sec" data-section="${esc(section.id)}" data-style="${esc(section.style)}">` +
@@ -67,6 +67,7 @@ export function renderTripPage(trip, ctx) {
   const visible = sections.flatMap((s) => s.visibleStops);
   const total = sections.reduce((n, s) => n + s.minutes, 0);
   const lowCount = trip.sections.reduce((n, s) => n + s.stops.filter(isLow).length, 0);
+  const offCount = trip.sections.reduce((n, s) => n + (s.style === 'route' ? s.stops.filter((p) => p.off_route === true).length : 0), 0);
   const defaultShowLow = trip.kind === 'log';
   const base = config.base_url || '';
   const pagePath = draft ? `/drafts${ctx.path}` : ctx.path;
@@ -92,9 +93,13 @@ export function renderTripPage(trip, ctx) {
   const tripNote = noteHtml || metaHtml ? `<div class="trip-note md d-only">${noteHtml}${metaHtml}</div>` : '';
   const mobileMeta = [author, `<span data-total-wrap${total ? '' : ' hidden'}>about <span data-total-time>${esc(formatMinutes(total))}</span></span>`].filter(Boolean).join(' · ');
 
-  const toggle = lowCount
-    ? `<div class="low-toggle"><input type="checkbox" role="switch" id="low-toggle"${defaultShowLow ? ' checked' : ''}><label for="low-toggle">Show low-rated places (${lowCount})</label></div>`
-    : '';
+  const toggle =
+    (lowCount
+      ? `<div class="low-toggle"><input type="checkbox" role="switch" id="low-toggle"${defaultShowLow ? ' checked' : ''}><label for="low-toggle">Show low-rated places (${lowCount})</label></div>`
+      : '') +
+    (offCount
+      ? `<div class="low-toggle"><input type="checkbox" role="switch" id="off-toggle" checked><label for="off-toggle">Show places off the path (${offCount})</label></div>`
+      : '');
 
   const mapsBtn = maps.url
     ? `<a class="btn btn-primary d-only" data-open-maps href="${esc(maps.url)}" target="_blank" rel="noopener">${icons.map}<span>Open in Google Maps</span></a>`

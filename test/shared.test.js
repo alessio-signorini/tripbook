@@ -136,7 +136,7 @@ test('maps-links: stop directions and open-in-maps choice', () => {
   assert.match(stopDirectionsUrl(stop(1, 2, 'x')), /destination=1,2&travelmode=walking&destination_place_id=x/);
   assert.doesNotMatch(stopDirectionsUrl(stop(1, 2)), /place_id/);
   const all = [stop(1, 1, 'a'), stop(2, 2, 'b')];
-  assert.match(openInMaps(all).url, /shortlist/);
+  assert.match(openInMaps(all).url, /\/dir\/.*origin=1,1&destination=2,2/);
   const few = [stop(1, 1, 'a'), stop(2, 2), stop(3, 3)];
   assert.match(openInMaps(few).url, /\/dir\//);
   assert.equal(openInMaps([]).url, null);
@@ -237,6 +237,9 @@ test('off_route: no number, kept out of routeStops, ignored in list sections', (
   assert.ok(!s.routeStops.some((p) => p.name === 'Corso Italia'));
   t.sections[0].stops[5].off_route = true; // Pasticceria Salza
   assert.deepEqual(visibleStops(t)[0].stops.filter((x) => x.offRoute).map((x) => x.label), ['A', 'B']);
+  const [h] = visibleStops(t, { showOffRoute: false });
+  assert.equal(h.count, 6);
+  assert.deepEqual(h.stops.filter((x) => x.offRoute).map((x) => x.visible), [false, false]);
   t.sections[0].style = 'list';
   const [l] = visibleStops(t);
   assert.deepEqual(l.stops.map((x) => x.label), ['1', '2', '3', '4', '5', '6', '7', '8']);

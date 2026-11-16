@@ -8,17 +8,18 @@ import { sectionLetter, totalMinutes } from './format.js';
  * list and on the map, is left out of the path, legs and route links, and is labelled with a letter
  * (A, B, C... across the whole trip) instead of a number.
  * Returns [{ section, letter, stops: [{ stop, visible, offRoute, label, number }], visibleStops, routeStops, minutes }]
+ * `showOffRoute` (default true) false hides off-route stops entirely.
  * `showLow` defaults to the trip kind: guides hide low-rated stops, logs show them.
  */
-export function visibleStops(trip, { showLow = trip.kind === 'log' } = {}) {
+export function visibleStops(trip, { showLow = trip.kind === 'log', showOffRoute = true } = {}) {
   const multi = trip.sections.length > 1;
   let offCount = 0;
   return trip.sections.map((section, si) => {
     const letter = sectionLetter(si);
     let n = 0;
     const stops = section.stops.map((stop) => {
-      const visible = showLow || !isLow(stop);
       const offRoute = section.style === 'route' && stop.off_route === true;
+      const visible = (showLow || !isLow(stop)) && (showOffRoute || !offRoute);
       if (!visible) return { stop, visible, offRoute, number: 0, label: '' };
       if (offRoute) return { stop, visible, offRoute, number: 0, label: sectionLetter(offCount++) };
       n += 1;

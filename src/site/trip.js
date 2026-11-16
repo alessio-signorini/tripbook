@@ -27,7 +27,16 @@ function readShowLow() {
 }
 
 const toggle = $('#low-toggle');
-const state = { tab: 'all', showLow: readShowLow(), selected: null };
+const offToggle = $('#off-toggle');
+const offKey = `tripbook.show_off_route.${data.id}`;
+function readShowOff() {
+  try {
+    const v = localStorage.getItem(offKey);
+    if (v === 'true' || v === 'false') return v === 'true';
+  } catch {}
+  return true;
+}
+const state = { tab: 'all', showLow: readShowLow(), showOff: readShowOff(), selected: null };
 let mapView = null;
 
 function toast(text) {
@@ -43,7 +52,7 @@ function scope(results) {
 }
 
 function update() {
-  const results = visibleStops(data, { showLow: state.showLow });
+  const results = visibleStops(data, { showLow: state.showLow, showOffRoute: state.showOff });
   const shown = scope(results);
   body.dataset.tab = state.tab;
   body.classList.toggle('hide-stars', Boolean(toggle) && !state.showLow);
@@ -58,7 +67,7 @@ function update() {
       time.hidden = !sec.minutes;
     }
     const links = $('.route-links', el);
-    if (links) {
+    if (links && sectionEls.size > 1) {
       const dir = directionsUrl(sec.routeStops);
       const urls = !dir ? [] : Array.isArray(dir) ? dir : [dir];
       links.innerHTML = '';
@@ -116,6 +125,17 @@ if (toggle) {
     state.showLow = toggle.checked;
     try {
       localStorage.setItem(storageKey, String(state.showLow));
+    } catch {}
+    update();
+  });
+}
+
+if (offToggle) {
+  offToggle.checked = state.showOff;
+  offToggle.addEventListener('change', () => {
+    state.showOff = offToggle.checked;
+    try {
+      localStorage.setItem(offKey, String(state.showOff));
     } catch {}
     update();
   });
