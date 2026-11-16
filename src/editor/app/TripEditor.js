@@ -67,15 +67,15 @@ export function TripEditor({ id }) {
   return html`<section class="screen">
     <div class="editor-bar">
       <a class="icon-btn" href="#/" aria-label="Back to trips">←</a>
-      <span class="grow">${trip.title || 'Untitled trip'}</span>
-      <span class="status">${rec.dirty ? 'Not synced' : rec.synced_at ? `Synced ${new Date(rec.synced_at).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}` : 'Synced'}</span>
+      <div class="grow bar-title"><span class="bar-name">${trip.title || 'Untitled trip'}</span>
+      <span class="status">${rec.dirty ? 'Not synced' : rec.synced_at ? `Synced ${new Date(rec.synced_at).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}` : 'Synced'}</span></div>
       <button class="btn btn-small" disabled=${working} onClick=${() => doSync(id)}>${busy.value === 'Sync' ? 'Syncing…' : 'Sync'}</button>
-      ${published
-        ? html`<button class="btn btn-small" disabled=${working} onClick=${() => doUnpublish(id)}>Unpublish</button>`
-        : html`<button class="btn btn-small btn-primary" disabled=${working} onClick=${() => doPublish(id)}>Publish</button>`}
+      ${!published && html`<button class="btn btn-small btn-primary bar-publish" disabled=${working} onClick=${() => doPublish(id)}>Publish</button>`}
       <${Menu} label="Trip actions">
         <button role="menuitem" onClick=${() => copyLink(rec)}>Copy live link</button>
         <button role="menuitem" onClick=${() => openPreview(trip)}>Preview</button>
+        ${!published && html`<button role="menuitem" class="menu-publish" disabled=${working} onClick=${() => doPublish(id)}>Publish</button>`}
+        ${published && html`<button role="menuitem" disabled=${working} onClick=${() => doUnpublish(id)}>Unpublish</button>`}
         <button role="menuitem" onClick=${() => setActive(isActive ? null : id)}>${isActive ? 'Clear active trip' : 'Set as active trip'}</button>
         ${trip.kind === 'log' && html`<button role="menuitem" onClick=${() => guideFromLog(rec)}>Make guide from this log</button>`}
         <button role="menuitem" class="danger" onClick=${async () => (await doDelete(id)) && navigate('#/')}>Delete</button>
@@ -91,11 +91,11 @@ export function TripEditor({ id }) {
           <button type="button" aria-pressed=${trip.kind === 'log'} onClick=${() => set({ kind: 'log' })}>Trip log</button>
         </div>
       </div>
-      <${Field} label="Slug" class="grow"><input type="text" value=${trip.slug} autocapitalize="none" onInput=${(e) => set({ slug: e.target.value })} /><small class="slug-url" title=${path}>${path}</small><//>
+      <${Field} label="Slug" class="grow"><input type="text" value=${trip.slug} autocapitalize="none" onInput=${(e) => set({ slug: e.target.value })} /><small class="slug-url" title=${path}>${tripPath(trip, cfg, { draft: !published })}</small><//>
     </div>
     <${Field} label="Trip note"><${AutoTextarea} minRows=${3} placeholder="Markdown: **bold**, *italic*, [links](https://…), lists" value=${trip.note} onInput=${(note) => set({ note })} /><//>
     <${PhotoField} trip=${trip} onChange=${(photo) => set({ photo })} />
-    <button type="button" class="details-toggle" aria-expanded=${showLoc} onClick=${() => setShowLoc(!showLoc)}>
+    <button type="button" class="details-toggle no-rule" aria-expanded=${showLoc} onClick=${() => setShowLoc(!showLoc)}>
       <span>${showLoc ? '▾' : '▸'} Location</span><span class="hint">${showLoc ? '' : [trip.location.city, trip.location.region, trip.location.country].filter(Boolean).join(', ')}</span>
     </button>
     ${showLoc && html`<div class="grid2">

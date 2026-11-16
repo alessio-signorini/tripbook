@@ -4,8 +4,9 @@ import { updateTrip, structural, showModal, closeModal, config, toast } from './
 import { findStop, autofillLocation, moveStop, deleteStop } from '../editing.js';
 import { Field, Menu, StarInput, AutoTextarea, Chips } from './fields.js';
 import { MapPicker } from './MapPicker.js';
-import { renderStarCompact } from '../../shared/rating.js';
 import { formatMinutes } from '../../shared/format.js';
+
+const chipMinutes = (n) => formatMinutes(n).replace(/ min$/, '');
 
 export function patchStop(tripId, stopId, patch) {
   updateTrip(tripId, (t) => {
@@ -52,7 +53,6 @@ function StopForm({ trip, stop }) {
 
   const [details, setDetails] = useState(false);
   const isRoute = findStop(trip, stop.id)?.section.style === 'route';
-  const place = [stop.address, stop.city].filter(Boolean)[0] || 'not set';
 
   return html`<div class="stop-form compact">
     <${Field} label="Name"><input type="text" value=${stop.name} onInput=${(e) => set({ name: e.target.value })} /><//>
@@ -60,10 +60,10 @@ function StopForm({ trip, stop }) {
 
     <div class="rt-row">
       <div class="field"><span>Rating</span><${StarInput} value=${stop.rating} onChange=${(rating) => set({ rating })} /></div>
-      <div class="field"><span>Time at this stop</span>
+      <div class="field"><span>Time at this stop (minutes)</span>
         <div class="time-row">
-          <${Chips} options=${presets} value=${stop.minutes} onChange=${(minutes) => set({ minutes })} format=${formatMinutes} />
-          <input class="min-input" type="number" inputmode="numeric" min="5" step="5" placeholder="min" aria-label="Custom minutes" value=${stop.minutes ?? ''}
+          <${Chips} options=${presets} value=${stop.minutes} onChange=${(minutes) => set({ minutes })} format=${chipMinutes} />
+          <input class="min-input" type="number" inputmode="numeric" min="5" step="5" placeholder="Custom" aria-label="Custom minutes" value=${stop.minutes ?? ''}
             onChange=${(e) => { const v = parseInt(e.target.value, 10); set({ minutes: v > 0 ? v : null }); }} />
           ${stop.minutes >= 60 && html`<span class="hint">${formatMinutes(stop.minutes)}</span>`}
         </div>
@@ -72,7 +72,7 @@ function StopForm({ trip, stop }) {
     ${isRoute && html`<label class="check"><input type="checkbox" checked=${stop.off_route === true} onChange=${(e) => set({ off_route: e.target.checked ? true : undefined })} /> <span>Recommended, but not on the route</span></label>`}
 
     <button type="button" class="details-toggle" aria-expanded=${details} onClick=${() => setDetails(!details)}>
-      <span>${details ? '▾' : '▸'} Address and location</span><span class="hint">${details ? '' : place}</span>
+      <span>${details ? '▾' : '▸'} Address and location</span>
     </button>
     ${details && html`<div class="details">
       <${Field} label="Address"><input type="text" value=${stop.address} onInput=${(e) => set({ address: e.target.value })} /><//>
@@ -106,9 +106,6 @@ export function StopCard({ trip, stop, label, reorder }) {
       <button type="button" class="open" aria-expanded=${expanded} onClick=${() => setOpen(!open)}>
         <span class="stop-num">${label}</span>
         <span class="stop-name">${stop.name || 'Unnamed stop'}</span>
-        ${stop.off_route && html`<span class="badge">Off route</span>`}
-        ${stop.minutes && html`<span class="badge">${formatMinutes(stop.minutes)}</span>`}
-        ${stop.rating && html`<span dangerouslySetInnerHTML=${{ __html: renderStarCompact(stop.rating) }} />`}
       </button>
       <${Menu} label=${`Actions for ${stop.name}`}>
         <button role="menuitem" onClick=${() => openMoveTo(trip, stop.id)}>Move to…</button>

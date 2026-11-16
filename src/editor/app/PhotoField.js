@@ -1,12 +1,12 @@
 import { html } from './ui.js';
 import { useState } from 'preact/hooks';
-import { Field } from './fields.js';
 import { findWikipediaPhoto } from '../../shared/wikipedia.js';
 import { photoCredit } from '../../shared/render/photo.js';
 
 /** Pick the trip's cover photo from a Wikipedia article's lead image. */
 export function PhotoField({ trip, onChange }) {
   const loc = trip.location;
+  const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [state, setState] = useState({ busy: false, error: '' });
   const term = query.trim() || loc.city || loc.region || loc.country;
@@ -25,16 +25,28 @@ export function PhotoField({ trip, onChange }) {
     }
   }
 
-  return html`<div class="field"><span>Photo</span>
-    ${trip.photo && html`<div class="row" style="gap:12px;align-items:flex-start;margin-bottom:8px">
-      <img src=${trip.photo.thumb || trip.photo.url} alt="" width="96" height="96" style="object-fit:cover;border-radius:8px" />
-      <div class="grow"><small dangerouslySetInnerHTML=${{ __html: photoCredit(trip.photo) }}></small></div>
-      <button type="button" class="btn btn-small" onClick=${() => onChange(null)}>Remove</button>
-    </div>`}
-    <div class="row nowrap" style="gap:8px">
-      <input type="text" class="grow" aria-label="Wikipedia article" placeholder=${term ? `Wikipedia article (default: ${term})` : 'Wikipedia article, e.g. Pisa'} value=${query} onInput=${(e) => setQuery(e.target.value)} />
-      <button type="button" class="btn btn-small" disabled=${state.busy || !term} onClick=${find}>${state.busy ? 'Searching…' : trip.photo ? 'Replace' : 'Find photo'}</button>
+  const photo = trip.photo;
+  const input = html`<input type="text" class="grow" aria-label="Wikipedia article" placeholder=${term ? `Wikipedia article (default: ${term})` : 'Wikipedia article, e.g. Pisa'} value=${query} onInput=${(e) => setQuery(e.target.value)} />`;
+  const search = (label) => html`<button type="button" class="btn btn-small" disabled=${state.busy || !term} onClick=${find}>${state.busy ? 'Searching…' : label}</button>`;
+  const author = photo && (photo.author || 'Wikimedia Commons');
+
+  return html`<div class="field">
+    <div class="details-toggle no-rule">
+      <button type="button" class="toggle-btn" aria-expanded=${open} onClick=${() => setOpen(!open)}>${open ? '▾' : '▸'} Photo</button>
+      ${!open && photo && html`<span class="hint">${photo.source_url
+        ? html`<a href=${photo.source_url} target="_blank" rel="noopener">${author}</a>`
+        : author}</span>`}
     </div>
-    ${state.error && html`<small role="alert" class="danger">${state.error}</small>`}
+    ${open && (photo
+      ? html`<div class="photo-edit">
+          <img src=${photo.thumb || photo.url} alt="" width="96" height="96" />
+          <div class="photo-side">
+            <small dangerouslySetInnerHTML=${{ __html: photoCredit(photo) }}></small>
+            ${input}
+            <div class="row" style="gap:8px">${search('Replace')}<button type="button" class="btn btn-small" onClick=${() => onChange(null)}>Remove</button></div>
+          </div>
+        </div>`
+      : html`<div class="row nowrap" style="gap:8px">${input}${search('Find photo')}</div>`)}
+    ${open && state.error && html`<small role="alert" class="danger">${state.error}</small>`}
   </div>`;
 }
