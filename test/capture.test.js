@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { localDate, isoWithOffset, sectionForCapture, addCapturedStop, newCaptureTrip } from '../src/editor/capture.js';
-import { mapPlace, mapGeocode, fromComponents, distanceM, parseCoordinates } from '../src/editor/places.js';
+import { localDate, isoWithOffset, sectionForCapture, addCapturedStop, newCaptureTrip } from '../src/editor/core/capture.js';
+import { mapPlace, mapGeocode, fromComponents, distanceM, parseCoordinates } from '../src/editor/core/places.js';
 import { newTrip, validateTrip, DEFAULT_CONFIG } from '../src/shared/schema.js';
 
 const fields = (name) => ({ name, lat: 34.41, lng: -119.68, place_id: 'abc', coords_source: 'place', city: 'Santa Barbara', country: 'United States', country_code: 'US', region: 'California', type: 'Beach', distance: 12 });

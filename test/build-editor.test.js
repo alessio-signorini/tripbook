@@ -44,7 +44,22 @@ test('sw.js lists the shell files and has a cache version', async () => {
   for (const f of ['/', '/index.html', '/build.json', '/manifest.webmanifest']) assert.ok(shell.includes(f), f);
   assert.ok(shell.some((f) => /^\/app\.[0-9a-f]{8}\.js$/.test(f)));
   assert.ok(shell.some((f) => f.startsWith('/preview/trip.')));
+  assert.ok(shell.some((f) => /^\/preview\/space-grotesk-700-latin-[A-Z0-9]+\.woff2$/.test(f)));
   assert.ok(!shell.includes('/sw.js'));
+});
+
+test('SortableJS and the Preview renderer (with marked) are lazy chunks in the offline shell', async () => {
+  const html = await readFile(join(out, 'index.html'), 'utf8');
+  const app = await readFile(join(out, html.match(/src="\/(app\.[0-9a-f]{8}\.js)"/)[1]), 'utf8');
+  const lazy = [...app.matchAll(/import\("\.\/(chunks\/[^"]+)"\)/g)].map((m) => m[1]);
+  assert.ok(lazy.some((f) => f.startsWith('chunks/sortable')), 'sortable chunk');
+  assert.ok(lazy.some((f) => f.startsWith('chunks/trip')), 'preview renderer chunk');
+  assert.doesNotMatch(app, /Sortable/);
+  const shell = JSON.parse((await readFile(join(out, 'sw.js'), 'utf8')).match(/const SHELL = (\[[\s\S]*?\]);/)[1]);
+  for (const f of lazy) {
+    assert.ok(shell.includes(`/${f}`), f);
+    assert.ok(existsSync(join(out, f)), f);
+  }
 });
 
 test('manifest has start_url "/" and the 404 redirects to /', async () => {

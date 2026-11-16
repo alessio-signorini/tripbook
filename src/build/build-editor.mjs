@@ -4,6 +4,7 @@ import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execSync } from 'node:child_process';
 import { bundleJs, bundleCss, hash } from './bundle.mjs';
+import { isMain, arg, flag, run, usage } from './cli.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
@@ -31,10 +32,11 @@ export async function buildEditor({ out, demo = false, log = console.log }) {
   await mkdir(out, { recursive: true });
   const src = join(root, 'src/editor');
 
-  const js = await bundleJs(join(src, 'main.js'), out, 'app');
-  const css = await bundleCss(join(src, 'editor.css'), out, 'editor');
-  const tripJs = await bundleJs(join(root, 'src/site/trip.js'), join(out, 'preview'), 'trip');
-  const siteCss = await bundleCss(join(root, 'src/site/site.css'), join(out, 'preview'), 'site');
+  const js = (await bundleJs(join(src, 'main.js'), out, 'app', { splitting: true })).name;
+  const css = (await bundleCss(join(src, 'editor.css'), out, 'editor')).name;
+  // Preview renders a trip page in an iframe with the site's own script and stylesheet.
+  const tripJs = (await bundleJs(join(root, 'src/site/trip/main.js'), join(out, 'preview'), 'trip')).name;
+  const siteCss = (await bundleCss(join(root, 'src/site/site.css'), join(out, 'preview'), 'site', { publicPath: '/preview' })).name;
 
   const index = (await readFile(join(src, 'index.html'), 'utf8')).replace('{{CSS}}', css).replace('{{JS}}', js);
   await writeFile(join(out, 'index.html'), index);
@@ -67,19 +69,8 @@ export async function buildEditor({ out, demo = false, log = console.log }) {
   return build;
 }
 
-function arg(name) {
-  const i = process.argv.indexOf(`--${name}`);
-  return i > -1 ? process.argv[i + 1] : undefined;
-}
-
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (isMain(import.meta.url)) {
   const out = arg('out');
-  if (!out) {
-    console.error('Usage: build-editor.mjs --out <dir>');
-    process.exit(2);
-  }
-  buildEditor({ out: resolve(out), demo: process.argv.includes('--demo') }).catch((e) => {
-    console.error(e.message);
-    process.exit(1);
-  });
+  if (!out) usage('build-editor.mjs --out <dir> [--demo]');
+  run(buildEditor({ out: resolve(out), demo: flag('demo') }));
 }

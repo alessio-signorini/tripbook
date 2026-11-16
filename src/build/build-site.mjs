@@ -8,14 +8,12 @@ import { renderListing, sortedTrips } from '../shared/render/listing.js';
 import { renderRedirect } from '../shared/render/redirect.js';
 import { renderTripMarkdown } from '../shared/render/trip-md.js';
 import { renderLlmsTxt, renderLlmsFull } from '../shared/render/llms.js';
+import { renderRobots, renderSitemap } from '../shared/render/seo.js';
+import { renderLayout } from '../shared/render/layout.js';
 import { bundleJs, bundleCss } from './bundle.mjs';
+import { isMain, arg, run, usage } from './cli.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
-
-const AI_AGENTS = [
-  'GPTBot', 'ChatGPT-User', 'OAI-SearchBot', 'ClaudeBot', 'Claude-User', 'Claude-SearchBot',
-  'Google-Extended', 'CCBot', 'PerplexityBot', 'Applebot-Extended', 'Bytespider', 'meta-externalagent',
-];
 
 async function readJson(file) {
   return JSON.parse(await readFile(file, 'utf8'));
@@ -76,9 +74,7 @@ export async function buildSite({ data, out, log = console.log }) {
     throw Object.assign(new Error(`Build failed:\n${collisions.map((e) => `  - ${e}`).join('\n')}`), { errors: collisions });
   }
 
-  const jsName = await bundleJs(join(root, 'src/site/trip.js'), join(out, 'assets'), 'trip');
-  const cssName = await bundleCss(join(root, 'src/site/site.css'), join(out, 'assets'), 'site');
-  const assets = { js: `/assets/${jsName}`, css: `/assets/${cssName}` };
+  const assets = await buildAssets(join(out, 'assets'));
   const base = config.base_url || '';
 
   let mdCount = 0;
@@ -120,22 +116,8 @@ export async function buildSite({ data, out, log = console.log }) {
   }
 
   await write(out, '404.html', notFound(config, assets, version));
-
-  let robots = 'User-agent: *\nDisallow: /drafts/\n';
-  if (config.ai_crawlers === 'disallow') {
-    for (const agent of AI_AGENTS) robots += `\nUser-agent: ${agent}\nDisallow: /\n`;
-  }
-  robots += `\nSitemap: ${base}/sitemap.xml\n`;
-  await write(out, 'robots.txt', robots);
-
-  const urls = [...listingPaths.keys(), ...pub.map((p) => p.path)];
-  await write(
-    out,
-    'sitemap.xml',
-    `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls
-      .map((u) => `  <url><loc>${xml(base + u)}</loc></url>`)
-      .join('\n')}\n</urlset>\n`,
-  );
+  await write(out, 'robots.txt', renderRobots(config));
+  await write(out, 'sitemap.xml', renderSitemap([...listingPaths.keys(), ...pub.map((p) => p.path)], config));
 
   if (config.ai_crawlers !== 'disallow') {
     await write(out, 'llms.txt', renderLlmsTxt(sortedTrips(items), { config }));
@@ -147,31 +129,32 @@ export async function buildSite({ data, out, log = console.log }) {
   return summary;
 }
 
-const xml = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+/**
+ * Bundle the trip page script and the site CSS into out/assets. The CSS is returned as text to inline
+ * in every page; its font files are written next to it, and the Latin heading font is preloaded.
+ */
+async function buildAssets(dir) {
+  const js = await bundleJs(join(root, 'src/site/trip/main.js'), dir, 'trip');
+  const css = await bundleCss(join(root, 'src/site/site.css'), dir, 'site', { publicPath: '/assets', emitEntry: false });
+  const font = css.files.find((f) => /^space-grotesk-700-latin-[^.]+\.woff2$/.test(f) && !f.includes('latin-ext'));
+  return { js: `/assets/${js.name}`, cssText: css.text.trim(), font: font && `/assets/${font}` };
+}
 
 function notFound(config, assets, version) {
-  return `<!doctype html>
-<html lang="${config.default_lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="generator" content="tripbook ${version}"><meta name="robots" content="noindex">
-<title>Not found · ${config.site_title}</title><link rel="stylesheet" href="${assets.css}"></head>
-<body><main class="listing"><h1>Page not found</h1><p><a href="/">Back to all trips</a></p></main></body></html>
-`;
+  return renderLayout({
+    title: `Not found · ${config.site_title}`,
+    robots: 'noindex',
+    og: false,
+    body: '<main class="listing"><h1>Page not found</h1><p><a href="/">Back to all trips</a></p></main>',
+    config,
+    assets,
+    version,
+  });
 }
 
-function arg(name) {
-  const i = process.argv.indexOf(`--${name}`);
-  return i > -1 ? process.argv[i + 1] : undefined;
-}
-
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (isMain(import.meta.url)) {
   const data = arg('data');
   const out = arg('out');
-  if (!data || !out) {
-    console.error('Usage: build-site.mjs --data <dir> --out <dir>');
-    process.exit(2);
-  }
-  buildSite({ data: resolve(data), out: resolve(out) }).catch((e) => {
-    console.error(e.message);
-    process.exit(1);
-  });
+  if (!data || !out) usage('build-site.mjs --data <dir> --out <dir>');
+  run(buildSite({ data: resolve(data), out: resolve(out) }));
 }

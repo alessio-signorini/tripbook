@@ -1,14 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import { renderTripPage } from '../src/shared/render/trip.js';
+import { readFileSync, readdirSync } from 'node:fs';
+import { renderTripPage, tripClientData, CLIENT_STOP_FIELDS } from '../src/shared/render/trip.js';
+import { visibleStops } from '../src/shared/visible.js';
+import { openInMaps, routeLinks } from '../src/shared/maps-links.js';
 import { tripPath } from '../src/shared/paths.js';
 import { mergeConfig } from '../src/shared/schema.js';
+import { load, pisa, sb, layover } from './fixtures.js';
 
-const load = (p) => JSON.parse(readFileSync(new URL(`../examples/data/${p}`, import.meta.url), 'utf8'));
-const pisa = () => load('published/pisa-in-one-walk.json');
-const sb = () => load('published/santa-barbara-perfect-day.json');
-const layover = () => load('drafts/pisa-4-hours-layover.json');
 const config = mergeConfig({ ...load('config.json'), google_maps_api_key: '' });
 const assets = { css: '/assets/site.test.css', js: '/assets/trip.test.js' };
 
@@ -121,4 +120,34 @@ test('off-route stop: bullet badge, no number, no leg around it, excluded from r
 
 test('Pisa guide has an off-path toggle, on by default', () => {
   assert.match(page(pisa()), /id="off-toggle" checked/);
+});
+
+test('#trip-data carries every stop field the browser needs: same labels, routes and totals as the full trip', () => {
+  for (const make of [pisa, sb, layover]) {
+    const trip = make();
+    trip.sections[0].stops[1].off_route = true;
+    const client = tripClientData(trip);
+    for (const s of client.sections) for (const stop of s.stops) assert.ok(Object.keys(stop).every((k) => CLIENT_STOP_FIELDS.includes(k)), JSON.stringify(stop));
+    for (const opts of [{ showLow: true }, { showLow: false }, { showLow: true, showOffRoute: false }]) {
+      const summary = (t) =>
+        visibleStops(t, opts).map((s) => ({
+          labels: s.stops.map((e) => [e.stop.id, e.label, e.visible]),
+          minutes: s.minutes,
+          routes: routeLinks(s.routeStops),
+          open: openInMaps(s.routeStops).url,
+        }));
+      assert.deepEqual(summary(client), summary(trip), `${trip.id} ${JSON.stringify(opts)}`);
+    }
+  }
+});
+
+test('the trip page script reads only CLIENT_STOP_FIELDS from stops', () => {
+  const dir = new URL('../src/site/trip/', import.meta.url);
+  const used = new Set();
+  for (const f of readdirSync(dir)) {
+    const src = readFileSync(new URL(f, dir), 'utf8');
+    for (const m of src.matchAll(/\b(?:stop|first)\.([a-z_]+)/g)) used.add(m[1]);
+  }
+  assert.ok(used.size > 0);
+  for (const field of used) assert.ok(CLIENT_STOP_FIELDS.includes(field), `src/site/trip/ reads stop.${field}`);
 });

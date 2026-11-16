@@ -1,7 +1,7 @@
 import { test, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { createGithub, ConflictError, toBase64, fromBase64, GithubError } from '../src/editor/github.js';
-import { syncTrip, publishTrip, pullRemote, newRecord, ValidationError } from '../src/editor/sync.js';
+import { createGithub, ConflictError, toBase64, fromBase64, GithubError } from '../src/editor/core/github.js';
+import { syncTrip, publishTrip, pullRemote, newRecord, ValidationError } from '../src/editor/core/sync.js';
 import { newTrip, newSection, newStop } from '../src/shared/schema.js';
 import { DEFAULT_CONFIG } from '../src/shared/schema.js';
 
@@ -171,7 +171,7 @@ test('pullRemote keeps dirty locals, fetches new and changed, removes vanished',
 test('fake github: same contract as the real client (put, get, list, conflict, move, delete)', async () => {
   const store = {};
   globalThis.localStorage = { getItem: (k) => store[k] ?? null, setItem: (k, v) => (store[k] = v), removeItem: (k) => delete store[k] };
-  const { createFakeGithub, seedDemo } = await import('../src/editor/demo.js');
+  const { createFakeGithub, seedDemo } = await import('../src/editor/core/demo.js');
   seedDemo({ config: { site_title: 'X' }, files: { 'drafts/a.json': { title: 'A' } } });
   const g = createFakeGithub();
   assert.deepEqual((await g.listFolder('drafts')).map((f) => f.name), ['a.json']);

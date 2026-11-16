@@ -1,20 +1,8 @@
 const BASE = 'https://www.google.com/maps';
 const MAX_URL = 2048;
-const MAX_SHORTLIST = 20;
 const MAX_STOPS_PER_ROUTE = 11; // origin + 9 waypoints + destination
 
 const ll = (s) => `${s.lat},${s.lng}`;
-
-export function shortlistUrl(stops) {
-  const ids = stops.filter((s) => s.place_id).map((s) => s.place_id).slice(0, MAX_SHORTLIST);
-  if (ids.length === 0) return null;
-  return `${BASE}/@?api=1&map_action=shortlist&place_ids=${ids.map(encodeURIComponent).join(',')}`;
-}
-
-/** Number of stops a shortlist URL would cover. */
-export function shortlistCount(stops) {
-  return Math.min(stops.filter((s) => s.place_id).length, MAX_SHORTLIST);
-}
 
 function oneDirectionsUrl(stops, withPlaceIds) {
   const origin = stops[0];
@@ -32,21 +20,25 @@ function oneDirectionsUrl(stops, withPlaceIds) {
 }
 
 /**
- * Walking directions through the stops in order.
- * Returns null (fewer than 2 stops), a string, or an array of strings when the
- * route needs several chunks (consecutive chunks share a boundary stop).
+ * Walking directions through the stops in order, as an array of URLs: [] for fewer than 2 stops,
+ * one URL for up to 11 stops, several when the route is split (consecutive parts share a boundary stop).
  */
 export function directionsUrl(stops) {
-  if (stops.length < 2) return null;
+  if (stops.length < 2) return [];
   const chunks = [];
   for (let i = 0; i < stops.length - 1; i += MAX_STOPS_PER_ROUTE - 1) {
     chunks.push(stops.slice(i, i + MAX_STOPS_PER_ROUTE));
   }
-  const urls = chunks.map((chunk) => {
+  return chunks.map((chunk) => {
     const full = oneDirectionsUrl(chunk, true);
     return full.length <= MAX_URL ? full : oneDirectionsUrl(chunk, false);
   });
-  return urls.length === 1 ? urls[0] : urls;
+}
+
+/** Section route links: [{ url, label }] labelled "Route in Google Maps", or "Part 1", "Part 2"… when split. */
+export function routeLinks(stops) {
+  const urls = directionsUrl(stops);
+  return urls.map((url, i) => ({ url, label: urls.length > 1 ? `Part ${i + 1}` : 'Route in Google Maps' }));
 }
 
 export function stopDirectionsUrl(stop) {
@@ -63,8 +55,7 @@ export function stopDirectionsUrl(stop) {
  * Returns { url }.
  */
 export function openInMaps(routeStops) {
-  const dir = directionsUrl(routeStops);
-  const url = Array.isArray(dir) ? dir[0] : dir;
-  if (url) return { url };
+  const [first] = directionsUrl(routeStops);
+  if (first) return { url: first };
   return { url: routeStops.length === 1 ? stopDirectionsUrl(routeStops[0]) : null };
 }

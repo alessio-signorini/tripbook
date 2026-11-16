@@ -43,7 +43,20 @@ test('expected files exist', async () => {
   }
   const assets = await readdir(join(out, 'assets'));
   assert.ok(assets.some((a) => /^trip\.[0-9a-f]{8}\.js$/.test(a)));
-  assert.ok(assets.some((a) => /^site\.[0-9a-f]{8}\.css$/.test(a)));
+  assert.ok(assets.some((a) => /^space-grotesk-700-latin-[A-Z0-9]+\.woff2$/.test(a)));
+  assert.ok(!assets.some((a) => a.endsWith('.css')), 'CSS is inlined, not written');
+});
+
+test('pages inline the CSS, preload the self-hosted heading font, and load no third-party fonts', async () => {
+  for (const f of ['italy/pisa/pisa-in-one-walk/index.html', 'index.html', '404.html']) {
+    const html = await readFile(join(out, f), 'utf8');
+    assert.match(html, /<style>[^<]*\.stop-name\{/, f);
+    assert.doesNotMatch(html, /rel="stylesheet"|fonts\.googleapis|fonts\.gstatic/, f);
+    const font = html.match(/<link rel="preload" href="(\/assets\/space-grotesk-700-latin-[A-Z0-9]+\.woff2)" as="font" type="font\/woff2" crossorigin>/);
+    assert.ok(font && existsSync(join(out, font[1])), f);
+    assert.ok(html.includes(`url("${font[1]}")`), `${f}: @font-face points at the preloaded file`);
+  }
+  assert.match(await readFile(join(out, '404.html'), 'utf8'), /<meta name="robots" content="noindex">[\s\S]*Page not found/);
 });
 
 test('draft is not listed; sitemap has no lastmod; no edit folder', async () => {

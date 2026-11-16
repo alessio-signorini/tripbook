@@ -106,16 +106,6 @@ textarea {
   grid-template-columns: 1fr 1fr;
   gap: 0 12px;
 }
-.grid3 {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 0 12px;
-}
-@media (max-width: 520px) {
-  .grid3 {
-    grid-template-columns: 1fr 1fr;
-  }
-}
 .group-title {
   font-size: 1rem;
   color: var(--muted);
@@ -898,16 +888,6 @@ textarea {
   padding: 4px 8px;
   border: 1px solid var(--input-border);
   border-radius: 10px;
-}
-.coords-row {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  align-items: flex-end;
-}
-.coords-row .field {
-  flex: 1;
-  min-width: 120px;
 }
 
 /* ---------- Capture screen (screens/Capture.js) ---------- */

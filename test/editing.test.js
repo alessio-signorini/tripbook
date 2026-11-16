@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { setTitle, moveStop, moveSection, deleteStop, addSection, addBlankStop, autofillLocation, makeGuide } from '../src/editor/editing.js';
+import { setTitle, moveStop, moveSection, deleteStop, addSection, autofillLocation, makeGuide, reuseUnchanged } from '../src/editor/core/editing.js';
 import { validateTrip, newTrip } from '../src/shared/schema.js';
 import { visibleStops } from '../src/shared/visible.js';
 
@@ -39,7 +39,7 @@ test('pin numbers follow the new order', () => {
   assert.equal(a.stops[0].label, 'A1');
 });
 
-test('moveSection, deleteStop, addSection, addBlankStop', () => {
+test('moveSection, deleteStop, addSection', () => {
   const t = sb();
   moveSection(t, 's-2', 0);
   assert.deepEqual(t.sections.map((s) => s.id), ['s-2', 's-1']);
@@ -47,9 +47,31 @@ test('moveSection, deleteStop, addSection, addBlankStop', () => {
   assert.equal(t.sections[1].stops.length, 1);
   const s = addSection(t);
   assert.equal(s.style, 'list');
-  const stop = addBlankStop(t, s.id);
-  assert.equal(stop.country, 'United States');
-  assert.equal(t.sections[2].stops.length, 1);
+  assert.equal(t.sections.length, 3);
+});
+
+test('reuseUnchanged keeps identity for unchanged sections and stops, also after a move', () => {
+  const prev = sb();
+  const edited = structuredClone(prev);
+  edited.sections[0].stops[0].note = 'changed';
+  const a = reuseUnchanged(prev, edited);
+  assert.notEqual(a, prev);
+  assert.notEqual(a.sections[0], prev.sections[0]);
+  assert.notEqual(a.sections[0].stops[0], prev.sections[0].stops[0]);
+  assert.equal(a.sections[0].stops[1], prev.sections[0].stops[1]);
+  assert.equal(a.sections[1], prev.sections[1]);
+  assert.deepEqual(a, edited);
+
+  const moved = structuredClone(prev);
+  moveSection(moved, 's-2', 0);
+  const b = reuseUnchanged(prev, moved);
+  assert.equal(b.sections[0], prev.sections[1]);
+  assert.equal(b.sections[1], prev.sections[0]);
+
+  assert.equal(reuseUnchanged(prev, structuredClone(prev)), prev);
+  const flagged = structuredClone(prev);
+  flagged.sections[0].stops[0].off_route = undefined;
+  assert.notEqual(reuseUnchanged(prev, flagged).sections[0].stops[0], prev.sections[0].stops[0]);
 });
 
 test('autofillLocation uses the first stop only when the trip has no country', () => {

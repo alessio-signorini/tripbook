@@ -1,8 +1,5 @@
 import { escapeHtml as esc } from '../format.js';
 
-const FONTS =
-  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap';
-
 function analytics(id) {
   const safe = JSON.stringify(id).replace(/</g, '\\u003c');
   return (
@@ -11,10 +8,17 @@ function analytics(id) {
   );
 }
 
+/** Stylesheet: inlined <style> when the build passes the CSS text (no render-blocking request), else a <link>. */
+function stylesheet(assets) {
+  if (assets.cssText) return `<style>${assets.cssText.replace(/<\/style/gi, '<\\/style')}</style>`;
+  return `<link rel="stylesheet" href="${esc(assets.css)}">`;
+}
+
 /**
- * Page shell.
- * opts: { title, description, lang, canonical, body, bodyAttrs, config, assets:{css,js},
- *         draft, kind: 'trip'|'listing', markdownHref, jsonld, version }
+ * Page shell shared by trip, listing and 404 pages.
+ * opts: { title, description, lang, canonical, image, body, bodyAttrs, config, draft, robots, markdownHref, jsonld, version,
+ *         preconnect: [origin], assets: { css | cssText, font?, js? } }
+ * `assets.font` is preloaded (the heading font); `preconnect` warms up third-party origins (Google Maps).
  */
 export function renderLayout(opts) {
   const { config, assets, draft = false } = opts;
@@ -23,22 +27,14 @@ export function renderLayout(opts) {
     '<meta charset="utf-8">',
     '<meta name="viewport" content="width=device-width, initial-scale=1">',
     `<title>${esc(opts.title)}</title>`,
-    `<meta name="description" content="${esc(opts.description || '')}">`,
+    opts.description != null ? `<meta name="description" content="${esc(opts.description)}">` : '',
     `<meta name="generator" content="tripbook ${esc(opts.version || '')}">`,
     opts.canonical ? `<link rel="canonical" href="${esc(opts.canonical)}">` : '',
-    draft ? '<meta name="robots" content="noindex">' : '',
-    `<meta property="og:title" content="${esc(opts.title)}">`,
-    `<meta property="og:description" content="${esc(opts.description || '')}">`,
-    opts.canonical ? `<meta property="og:url" content="${esc(opts.canonical)}">` : '',
-    `<meta property="og:site_name" content="${esc(siteName)}">`,
-    '<meta property="og:type" content="website">',
-    opts.image ? `<meta property="og:image" content="${esc(opts.image)}">` : '',
-    `<meta name="twitter:card" content="${opts.image ? 'summary_large_image' : 'summary'}">`,
-    opts.image ? `<meta name="twitter:image" content="${esc(opts.image)}">` : '',
-    '<link rel="preconnect" href="https://fonts.googleapis.com">',
-    '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>',
-    `<link rel="stylesheet" href="${FONTS}">`,
-    `<link rel="stylesheet" href="${esc(assets.css)}">`,
+    draft || opts.robots === 'noindex' ? '<meta name="robots" content="noindex">' : '',
+    opts.og === false ? '' : openGraph(opts, siteName),
+    ...(opts.preconnect || []).map((origin) => `<link rel="preconnect" href="${esc(origin)}" crossorigin>`),
+    assets.font ? `<link rel="preload" href="${esc(assets.font)}" as="font" type="font/woff2" crossorigin>` : '',
+    stylesheet(assets),
     opts.markdownHref ? `<link rel="alternate" type="text/markdown" href="${esc(opts.markdownHref)}">` : '',
     opts.jsonld ? `<script type="application/ld+json">${opts.jsonld}</script>` : '',
     !draft && config.google_analytics_id ? analytics(config.google_analytics_id) : '',
@@ -56,6 +52,21 @@ ${opts.body}
 </body>
 </html>
 `;
+}
+
+function openGraph(opts, siteName) {
+  return [
+    `<meta property="og:title" content="${esc(opts.title)}">`,
+    `<meta property="og:description" content="${esc(opts.description || '')}">`,
+    opts.canonical ? `<meta property="og:url" content="${esc(opts.canonical)}">` : '',
+    `<meta property="og:site_name" content="${esc(siteName)}">`,
+    '<meta property="og:type" content="website">',
+    opts.image ? `<meta property="og:image" content="${esc(opts.image)}">` : '',
+    `<meta name="twitter:card" content="${opts.image ? 'summary_large_image' : 'summary'}">`,
+    opts.image ? `<meta name="twitter:image" content="${esc(opts.image)}">` : '',
+  ]
+    .filter(Boolean)
+    .join('\n');
 }
 
 export { esc };

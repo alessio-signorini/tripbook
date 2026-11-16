@@ -1,11 +1,21 @@
+/** Editor entry point: wire global events, render the app, load local data, register the service worker. */
 import { render } from 'preact';
-import { html } from 'htm/preact';
-import { App } from './app/App.js';
-import { route, parseHash, init, refresh, autoRetry, updateReady, isConfigured, sw } from './app/state.js';
+import { html } from './components/html.js';
+import { App } from './App.js';
+import { showConflict } from './components/Conflict.js';
+import {
+  route, parseHash, init, refresh, autoRetry, isConfigured, registerConflictHandler, registerServiceWorker, flushPendingSaves,
+} from './state/index.js';
+
+registerConflictHandler(showConflict);
 
 window.addEventListener('hashchange', () => (route.value = parseHash()));
 window.addEventListener('online', autoRetry);
-document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && autoRetry());
+window.addEventListener('pagehide', flushPendingSaves);
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') autoRetry();
+  else flushPendingSaves();
+});
 
 render(html`<${App} />`, document.getElementById('app'));
 
@@ -13,11 +23,4 @@ init().then(() => {
   if (isConfigured()) refresh({ quiet: true });
 });
 
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js').then((reg) => {
-    sw.registration = reg;
-    const notify = () => reg.waiting && navigator.serviceWorker.controller && (updateReady.value = true);
-    notify();
-    reg.addEventListener('updatefound', () => reg.installing?.addEventListener('statechange', notify));
-  }).catch(() => {});
-}
+registerServiceWorker();
