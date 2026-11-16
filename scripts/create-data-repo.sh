@@ -26,9 +26,9 @@ Never overwrites an existing repo.
 EOF
 }
 
-OWNER="${DATA_REPO:-}"; OWNER="${OWNER%%/*}"; REPO="${DATA_REPO:-}"; REPO="${REPO#*/}"; DOMAIN="${SITE_DOMAIN:-}"; CODE_REPO=""; CODE_REF=""
+OWNER=""; REPO="trips"; DOMAIN="${SITE_DOMAIN:-}"; CODE_REPO=""; CODE_REF=""
 MAPS_KEY="${MAPS_KEY:-}"; MAP_ID="${MAP_ID:-}"; AUTHOR="${AUTHOR:-}"
-[ -n "${DATA_REPO:-}" ] || { OWNER=""; REPO="trips"; }
+
 while [ $# -gt 0 ]; do
   case "$1" in
     --owner) OWNER="${2:?}"; shift 2 ;;
@@ -54,6 +54,12 @@ case "$SCOPES" in
   *) echo "The gh token needs the workflow scope. Run: gh auth refresh -s workflow" >&2; exit 1 ;;
 esac
 
+if [ -n "${DATA_REPO:-}" ]; then
+  # DATA_REPO from .env supplies owner and name unless --owner/--repo were given
+  _full="$(normalize_repo "$DATA_REPO")"
+  [ -n "$OWNER" ] || OWNER="${_full%%/*}"
+  [ "$REPO" != "trips" ] || REPO="${_full#*/}"
+fi
 [ -n "$OWNER" ] || OWNER="$(gh api user -q .login)"
 [ -n "$CODE_REPO" ] || CODE_REPO="$(gh repo view --json nameWithOwner -q .nameWithOwner)"
 if [ -z "$CODE_REF" ]; then

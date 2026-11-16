@@ -64,6 +64,7 @@ git push origin main --follow-tags
 if [ -z "$DATA_REPO" ]; then
   DATA_REPO="$(gh api user -q .login)/trips"
 fi
+DATA_REPO="$(normalize_repo "$DATA_REPO")"
 
 echo "==> Updating data repo $DATA_REPO"
 if gh repo view "$DATA_REPO" >/dev/null 2>&1; then

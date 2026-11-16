@@ -39,6 +39,7 @@ done
 
 echo "==> Checking GitHub CLI login"
 gh auth status >/dev/null
+DATA="$(normalize_repo "$DATA")"
 [ -n "$CODE_REPO" ] || CODE_REPO="$(gh repo view --json nameWithOwner -q .nameWithOwner)"
 echo "    tripbook: $CODE_REPO   data repo: $DATA"
 

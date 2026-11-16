@@ -20,3 +20,12 @@ load_env() {
     esac
   done < "$file"
 }
+
+# "trips.example.com" -> "<your gh user>/trips.example.com"; "owner/name" is returned as is.
+normalize_repo() {
+  case "$1" in
+    */*) echo "$1" ;;
+    '') echo "" ;;
+    *) echo "$(gh api user -q .login)/$1" ;;
+  esac
+}
