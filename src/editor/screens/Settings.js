@@ -64,7 +64,7 @@ export function Settings() {
     try {
       await pushConfig(next, configRec.value.sha);
       setForm(toForm(config.value));
-      toast('Settings saved. Rebuild the site to apply them.');
+      toast('Settings saved. The site rebuilds automatically (about a minute).');
     } catch (e) {
       if (e instanceof ConflictError) showModal(() => html`<${ConfigConflict} pending=${next} />`, { title: 'Settings conflict' });
       else toast(`Save failed: ${e.message}`);
@@ -103,7 +103,7 @@ export function Settings() {
       <button class="btn btn-primary" disabled=${saving} onClick=${save}>${saving ? 'Saving…' : 'Save settings'}</button>
       <button class="btn" disabled=${Boolean(busy.value)} onClick=${rebuildSite}>Rebuild site</button>
     </div>
-    <p class="hint">The Rebuild button needs a token with Actions: Read and write.</p>
+    <p class="hint">Saving rebuilds the site automatically. Use Rebuild only to re-run it without a change (needs a token with Actions: Read and write).</p>
 
     <h2 class="group-title">Active trip</h2>
     <p>${active ? active.trip.title || 'Untitled trip' : 'None'}</p>

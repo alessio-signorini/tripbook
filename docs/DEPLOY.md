@@ -155,7 +155,7 @@ If Release failed, pin the site by hand: `gh variable set TRIPBOOK_REF -R you/tr
 
 ## 14. Optional settings
 
-In the editor's **Settings** (they are saved to the data repo's `config.json`): site title, author, Google Analytics ID (published trips and listing pages only, never drafts or the editor), time presets, default kind, `ai_crawlers` (`disallow` also stops `llms.txt` and `llms-full.txt` from being written). Press **Rebuild site** to apply them.
+In the editor's **Settings** (they are saved to the data repo's `config.json`): site title, author, Google Analytics ID (published trips and listing pages only, never drafts or the editor), time presets, default kind, `ai_crawlers` (`disallow` also stops `llms.txt` and `llms-full.txt` from being written). Saving commits `config.json`, which rebuilds the site automatically (about a minute); **Rebuild site** is only needed to re-run the build without a change.
 
 ## Day to day
 
