@@ -11,6 +11,11 @@ import { mergeConfig } from '../src/shared/schema.js';
 const load = (p) => JSON.parse(readFileSync(new URL(`../examples/data/${p}`, import.meta.url), 'utf8'));
 const pisa = () => load('published/pisa-in-one-walk.json');
 const sb = () => load('published/santa-barbara-perfect-day.json');
+const sbRoutes = () => {
+  const t = sb();
+  t.sections.forEach((s) => (s.style = 'route'));
+  return t;
+};
 const layover = () => load('drafts/pisa-4-hours-layover.json');
 const config = mergeConfig(load('config.json'));
 const md = (t) => renderTripMarkdown(t, { config, url: `http://localhost:8080${tripPath(t, config)}` });
@@ -35,7 +40,7 @@ test('Layover guide lists low stop only under Not recommended', () => {
 });
 
 test('Log lists low stop inline; no dates or internal ids', () => {
-  const out = md(sb());
+  const out = md(sbRoutes());
   assert.match(out, /\*\*Butterfly Beach\*\*/);
   assert.match(out, /## A · Downtown/);
   assert.doesNotMatch(out, /\d{4}-\d{2}-\d{2}|captured_at|place_id|2026/);

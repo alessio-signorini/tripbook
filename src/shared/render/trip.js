@@ -65,10 +65,13 @@ function stopRow(entry, section, nextEntry) {
 /** <section class="sec">: head (letter · title, count, time, route links) only when there are several sections or a title. */
 function sectionBlock(sec, multi) {
   const { section, letter } = sec;
-  const titleText = [multi ? letter : '', section.title].filter(Boolean).join(' · ');
+  const titleText = [letter, section.title].filter(Boolean).join(' · ');
   const meta = multi
     ? `<span class="sec-count">${esc(plural(sec.count, 'stop'))}</span>` +
       `<span class="sec-time"${sec.minutes ? '' : ' hidden'}>${esc(formatMinutes(sec.minutes))}</span>`
+    : '';
+  const solo = multi
+    ? `<button type="button" class="sec-solo" data-solo="${esc(section.id)}" aria-pressed="false">Show only this</button>`
     : '';
   const links =
     multi && section.style === 'route'
@@ -76,7 +79,7 @@ function sectionBlock(sec, multi) {
           .map(({ url, label }) => external(url, 'route-link', label))
           .join(' ')}</span>`
       : '';
-  const head = multi || section.title ? `<div class="sec-head"><h2 class="sec-title">${esc(titleText)}</h2><div class="sec-meta">${meta}${links}</div></div>` : '';
+  const head = multi || section.title ? `<div class="sec-head"><h2 class="sec-title">${esc(titleText)}</h2><div class="sec-meta">${meta}${links}${solo}</div></div>` : '';
   const note = hasText(section.note) ? `<div class="sec-note md clamp">${renderMarkdown(section.note)}</div>` : '';
   return (
     `<section class="sec" data-section="${esc(section.id)}" data-style="${esc(section.style)}">` +
@@ -140,7 +143,7 @@ export function renderTripPage(trip, ctx) {
   const visibleCount = sections.reduce((n, s) => n + s.count, 0);
   const total = sections.reduce((n, s) => n + s.minutes, 0);
   const lowCount = trip.sections.reduce((n, s) => n + s.stops.filter(isLow).length, 0);
-  const offCount = trip.sections.reduce((n, s) => n + (s.style === 'route' ? s.stops.filter((p) => p.off_route === true).length : 0), 0);
+  const offCount = trip.sections.reduce((n, s) => n + (s.style === 'route' ? s.stops.filter((p) => p.off_route === true).length : s.stops.length), 0);
   const defaultShowLow = trip.kind === 'log';
   const url = `${config.base_url || ''}${draft ? `/drafts${ctx.path}` : ctx.path}`;
   const mapsUrl = openInMaps(sections.flatMap((s) => s.routeStops)).url;

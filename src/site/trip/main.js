@@ -18,6 +18,7 @@ const offToggle = $('#off-toggle');
 const showLow = persistedFlag(`tripbook.show_low.${data.id}`, body.dataset.showLow === 'true');
 const showOff = persistedFlag(`tripbook.show_off_route.${data.id}`, true);
 let selected = null;
+let only = null;
 let mapView = null;
 
 const list = createList();
@@ -29,7 +30,7 @@ const sheet = createSheet($('#sheet'), {
 });
 
 function update() {
-  const results = visibleStops(data, { showLow: showLow.get(), showOffRoute: showOff.get() });
+  const results = visibleStops(data, { showLow: showLow.get(), showOffRoute: showOff.get(), only });
   body.classList.toggle('hide-stars', Boolean(lowToggle) && !showLow.get());
   list.render(results);
   if (selected && list.isHidden(selected)) select(null);
@@ -52,6 +53,18 @@ function bindSwitch(input, flag) {
 }
 bindSwitch(lowToggle, showLow);
 bindSwitch(offToggle, showOff);
+
+document.querySelectorAll('[data-solo]').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    only = only === btn.dataset.solo ? null : btn.dataset.solo;
+    document.querySelectorAll('[data-solo]').forEach((b) => {
+      const on = b.dataset.solo === only;
+      b.setAttribute('aria-pressed', String(on));
+      b.textContent = on ? 'Show all' : 'Show only this';
+    });
+    update();
+  });
+});
 
 list.rows.forEach((el, id) => {
   el.addEventListener('click', (e) => {

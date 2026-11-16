@@ -6,6 +6,11 @@ import { validateTrip, newTrip } from '../src/shared/schema.js';
 import { visibleStops } from '../src/shared/visible.js';
 
 const sb = () => JSON.parse(readFileSync(new URL('../examples/data/published/santa-barbara-perfect-day.json', import.meta.url), 'utf8'));
+const sbRoutes = () => {
+  const t = sb();
+  t.sections.forEach((s) => (s.style = 'route'));
+  return t;
+};
 const ids = (section) => section.stops.map((s) => s.id);
 
 test('slug follows the title until it is edited', () => {
@@ -32,7 +37,7 @@ test('moveStop across sections by index, Top and Bottom', () => {
 });
 
 test('pin numbers follow the new order', () => {
-  const t = sb();
+  const t = sbRoutes();
   moveStop(t, 'p-4', 's-1', 0);
   const [a] = visibleStops(t);
   assert.equal(a.stops[0].stop.id, 'p-4');

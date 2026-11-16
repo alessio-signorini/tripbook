@@ -603,6 +603,19 @@ a {
 .route-link {
   font-weight: 600;
 }
+.sec-solo {
+  margin-left: 0.9em;
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--accent-text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.sec-solo[aria-pressed="true"] {
+  color: var(--muted);
+}
 .sec-note {
   padding: 0 12px 6px;
   color: var(--text);

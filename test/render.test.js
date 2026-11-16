@@ -6,7 +6,7 @@ import { visibleStops } from '../src/shared/visible.js';
 import { openInMaps, routeLinks } from '../src/shared/maps-links.js';
 import { tripPath } from '../src/shared/paths.js';
 import { mergeConfig } from '../src/shared/schema.js';
-import { load, pisa, sb, layover } from './fixtures.js';
+import { load, pisa, sb, sbRoutes, layover } from './fixtures.js';
 
 const config = mergeConfig({ ...load('config.json'), google_maps_api_key: '' });
 const assets = { css: '/assets/site.test.css', js: '/assets/trip.test.js' };
@@ -34,7 +34,7 @@ test('Pisa page has no low-rated toggle', () => {
 });
 
 test('Santa Barbara log: no dates leak, low stop visible, toggle checked, empty note renders nothing', () => {
-  const html = page(sb());
+  const html = page(sbRoutes());
   assert.doesNotMatch(html, /2026/);
   assert.doesNotMatch(html, /T\d\d:\d\d/);
   assert.doesNotMatch(html, /captured_at|auto_date/);
@@ -150,4 +150,14 @@ test('the trip page script reads only CLIENT_STOP_FIELDS from stops', () => {
   }
   assert.ok(used.size > 0);
   for (const field of used) assert.ok(CLIENT_STOP_FIELDS.includes(field), `src/site/trip/ reads stop.${field}`);
+});
+
+test('list sections are lettered off-route; solo buttons only with several sections', () => {
+  const html = page(pisa());
+  assert.match(html, /data-solo="s-2"/);
+  assert.doesNotMatch(html, /<h2 class="sec-title">[A-Z] · /);
+  assert.match(html, /<li class="stop off-route"[^>]*data-stop="p-9"[^>]*data-label="B"/);
+  const single = pisa();
+  single.sections.pop();
+  assert.doesNotMatch(page(single), /data-solo/);
 });

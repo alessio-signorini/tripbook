@@ -5,3 +5,9 @@ export const load = (p) => JSON.parse(readFileSync(new URL(`../examples/data/${p
 export const pisa = () => load('published/pisa-in-one-walk.json');
 export const sb = () => load('published/santa-barbara-perfect-day.json');
 export const layover = () => load('drafts/pisa-4-hours-layover.json');
+/** Santa Barbara with both sections as routes (the example ships them as lists). */
+export const sbRoutes = () => {
+  const t = sb();
+  t.sections.forEach((s) => (s.style = 'route'));
+  return t;
+};

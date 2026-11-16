@@ -409,7 +409,7 @@ Steps:
 - **Stats:** a gray `(N stops · About 3 h)` is appended at the end of the trip note for single-section trips (updates with the low-rated switch). Multi-section trips show the count and time in each section header instead.
 - **Body:** two columns. Left: map, sticky, height `calc(100vh - 32px)`, min 520 px. Right (list column, 100 px wider than the first design): the low-rated switch (§7.9), then the stop list. **There are no section tabs**: every section is shown inline, one after another.
 - **Stop row:** number badge (`3`, or `A3` when the trip has more than one section), name (H3), the time pill (`20 min`, `1 h 30 min`; omitted if null) right after the name, then one line with the compact rating (one proportional star + `(4/5)`, §7.8) to the left of the address (secondary text), then the stop note (Markdown). Title, stars and address are tightly spaced. Between consecutive visible stops in a `route` section, a dotted connector with `leg_to_next` text if present. A small directions icon (no text) links to `stopDirectionsUrl` (§7.5).
-- **Section header** (shown when the trip has more than one section or the section has a title): `A · Lahaina` (letter only when more than one section), stop count, total time, and for `route` sections the **Route in Google Maps** link. Below it, the section `note` (Markdown) when non-empty.
+- **Section header** (shown when the trip has more than one section or the section has a title): `A · Lahaina` (letter only on route sections when there are several), a `Show only this` button, stop count, total time, and for `route` sections the **Route in Google Maps** link. Below it, the section `note` (Markdown) when non-empty.
 - Hover or focus on a stop row highlights its pin. Click on a pin scrolls to and highlights the row. Clicking a row selects it (tint) and highlights its pin.
 - Separators in text are `·`.
 
@@ -481,7 +481,9 @@ The reader is on the ground. No editing or sharing chrome.
 
 ### 7.9a Off-route places
 
-- `stop.off_route === true` applies only in `route` sections; in `list` sections it is ignored.
+- `stop.off_route === true` applies only in `route` sections; every stop of a `list` section is off-route (letter label, white pin, no route line, legs or route links).
+- Section letters (A, B…) are given only to `route` sections and only when the trip has more than one of them; otherwise labels are plain numbers. `visibleStops(trip, { only })` hides the stops of every other section without changing labels.
+- When the trip has several sections, each section header has a `Show only this` button (`data-solo`, `aria-pressed`) that shows just that section's stops (on the list, map and totals) and turns into `Show all`; not persisted.
 - An off-route stop keeps its place in the list order (with time, rating, address, note) but takes no number. It gets a letter label `A`, `B`, `C`… counted across the **whole trip** (not per section) and the following numbers do not skip. Numbers and letters are computed by `visibleStops`.
 - It is excluded from the polyline, from leg connectors (a leg is shown only between two visible **on-route** stops), from `Route in Google Maps` and from **Open in Google Maps**; it still counts in the stop total and time.
 - When the trip has off-route stops, a second switch under the low-rated one reads `Show places off the path (N)` (`id="off-toggle"`, on by default; remembered in `localStorage["tripbook.show_off_route.<trip id>"]`). Off, those stops are hidden like low-rated ones (`visibleStops(trip, { showOffRoute: false })`).
@@ -498,7 +500,7 @@ The reader is on the ground. No editing or sharing chrome.
 
   <trip note>
 
-  ## A · <section title>          (omit the letter when there is one section)
+  ## A · <section title>          (letter only on route sections when there are several)
   <section note>
 
   1. **<name>** — <address>
