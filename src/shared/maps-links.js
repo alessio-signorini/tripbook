@@ -57,15 +57,16 @@ export function stopDirectionsUrl(stop) {
 
 /**
  * The "Open in Google Maps" target for a set of visible stops:
- * the shortlist when it covers at least half of them, else the first directions URL.
+ * the shortlist when it covers at least half of them, else the first directions URL through
+ * the on-route stops (routeStops).
  * Returns { url }.
  */
-export function openInMaps(stops) {
+export function openInMaps(stops, routeStops = stops) {
   const list = shortlistUrl(stops);
   if (list && shortlistCount(stops) * 2 >= stops.length) {
     return { url: list };
   }
-  const dir = directionsUrl(stops);
+  const dir = directionsUrl(routeStops);
   const url = Array.isArray(dir) ? dir[0] : dir;
   if (url) return { url };
   return { url: stops.length === 1 ? stopDirectionsUrl(stops[0]) : null };

@@ -10,7 +10,7 @@ const indent = (text, pad = '   ') =>
     .join('\n');
 
 function stopLines(stop, number, leg) {
-  const head = `${number}. **${stop.name}**${stop.address ? ` — ${stop.address}` : ''}`;
+  const head = `${number === '-' ? '-' : `${number}.`} **${stop.name}**${stop.address ? ` — ${stop.address}` : ''}`;
   const meta = [];
   if (stop.minutes) meta.push(`Time: ${formatMinutes(stop.minutes)}`);
   if (stop.rating) meta.push(`Rating: ${stop.rating}/5`);
@@ -44,12 +44,18 @@ export function renderTripMarkdown(trip, ctx) {
 
     const route = sec.section.style === 'route';
     const entries = sec.stops;
+    const alsoRecommended = [];
     entries.forEach((entry, i) => {
       if (!entry.visible) return;
+      if (entry.offRoute) return alsoRecommended.push(entry.stop);
       const next = entries[i + 1];
-      const leg = route && next && next.visible ? sec.section.stops[i].leg_to_next : null;
+      const leg = route && next && next.visible && !next.offRoute ? sec.section.stops[i].leg_to_next : null;
       out.push(stopLines(entry.stop, entry.number, leg));
     });
+    if (alsoRecommended.length) {
+      out.push('', 'Also recommended (not on the route):', '');
+      for (const s of alsoRecommended) out.push(stopLines(s, '-', null));
+    }
     out.push('');
   }
 

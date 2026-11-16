@@ -121,6 +121,7 @@ export function validateTrip(trip, file = '') {
       if (!(p.minutes === null || (Number.isInteger(p.minutes) && p.minutes > 0))) err(`${pp}.minutes must be a positive integer or null`);
       if (!(p.leg_to_next === null || isStr(p.leg_to_next))) err(`${pp}.leg_to_next must be a string or null`);
       if (!isStr(p.note)) err(`${pp}.note must be a string`);
+      if (p.off_route !== undefined && typeof p.off_route !== 'boolean') err(`${pp}.off_route must be true or false`);
       if (!(p.rating === null || (Number.isInteger(p.rating) && p.rating >= 1 && p.rating <= 5))) err(`${pp}.rating must be an integer 1-5 or null`);
       if (!(p.captured_at === null || isIso(p.captured_at))) err(`${pp}.captured_at must be an ISO date string or null`);
     });

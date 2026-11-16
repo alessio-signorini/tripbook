@@ -62,6 +62,7 @@ a { color: var(--accent-text); }
 .btn-secondary:hover { background: var(--surface); }
 .kicker { color: var(--accent-text); font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.04em; }
 .badge-num { flex: none; width: 30px; height: 30px; min-width: 30px; border-radius: 999px; background: var(--accent); color: #fff; display: inline-flex; align-items: center; justify-content: center; font: 700 0.8rem var(--font-head); }
+.badge-num.off { background: #fff; color: var(--muted); border: 2px solid var(--muted); font-size: 1.1rem; line-height: 1; }
 .time { background: var(--surface); border-radius: 999px; padding: 1px 10px; font-size: 0.8rem; font-weight: 500; color: var(--ink); white-space: nowrap; }
 .stop-head { display: flex; align-items: center; flex-wrap: wrap; gap: 2px 10px; padding-top: 4px; }
 .stop-head .time { flex: none; }

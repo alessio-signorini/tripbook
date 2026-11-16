@@ -58,7 +58,7 @@ function update() {
     }
     const links = $('.route-links', el);
     if (links) {
-      const dir = directionsUrl(sec.visibleStops);
+      const dir = directionsUrl(sec.routeStops);
       const urls = !dir ? [] : Array.isArray(dir) ? dir : [dir];
       links.innerHTML = '';
       urls.forEach((u, i) => {
@@ -76,9 +76,10 @@ function update() {
       row.hidden = !entry.visible;
       const label = state.tab === 'all' && multi ? entry.label : String(entry.number || '');
       row.dataset.label = label;
-      $('.badge-num', row).textContent = label;
+      $('.badge-num', row).textContent = entry.offRoute ? '•' : label;
       const leg = legs.get(entry.stop.id);
-      if (leg) leg.hidden = !(entry.visible && sec.stops[i + 1]?.visible);
+      const next = sec.stops[i + 1];
+      if (leg) leg.hidden = !(entry.visible && next?.visible && !entry.offRoute && !next.offRoute);
     });
   }
 
@@ -89,7 +90,7 @@ function update() {
   $$('[data-total-time]').forEach((el) => (el.textContent = formatMinutes(total)));
   $$('[data-total-wrap]').forEach((el) => (el.hidden = !total));
 
-  const maps = openInMaps(visible);
+  const maps = openInMaps(visible, shown.flatMap((s) => s.routeStops));
   $$('[data-open-maps]').forEach((a) => {
     a.hidden = !maps.url;
     if (maps.url) a.href = maps.url;
@@ -258,7 +259,7 @@ async function initMap() {
         const path = [];
         sec.stops.forEach((entry) => {
           if (!entry.visible) return;
-          const label = rows.get(entry.stop.id).dataset.label;
+          const label = entry.offRoute ? '•' : rows.get(entry.stop.id).dataset.label;
           const m = new AdvancedMarkerElement({
             map,
             position: { lat: entry.stop.lat, lng: entry.stop.lng },
@@ -271,7 +272,7 @@ async function initMap() {
           });
           m._label = label;
           markers.set(entry.stop.id, m);
-          path.push({ lat: entry.stop.lat, lng: entry.stop.lng });
+          if (!entry.offRoute) path.push({ lat: entry.stop.lat, lng: entry.stop.lng });
           current.push({ lat: entry.stop.lat, lng: entry.stop.lng });
         });
         if (sec.section.style === 'route' && path.length > 1) {

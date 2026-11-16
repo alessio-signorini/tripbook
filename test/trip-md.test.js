@@ -72,3 +72,13 @@ test('JSON-LD: visible stops only, no ratings, no dates', () => {
   const page = renderTripPage(t, { config, assets: { css: 'a', js: 'b' }, path: '/x/', version: '0' });
   assert.ok(!page.includes('</script><b>'));
 });
+
+test('off-route stops are listed separately and not numbered', () => {
+  const t = pisa();
+  t.sections[0].stops[2].off_route = true;
+  const out = md(t);
+  assert.match(out, /Also recommended \(not on the route\):\n\n- \*\*Corso Italia\*\*/);
+  assert.doesNotMatch(out.split('Also recommended')[0], /Corso Italia/);
+  assert.match(out, /^3\. \*\*Ponte di Mezzo\*\*/m);
+  assert.doesNotMatch(out, /Next: 4 min walk\n[\s\S]*Next: 8 min walk/);
+});

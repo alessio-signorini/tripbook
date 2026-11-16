@@ -20,14 +20,14 @@ function stopRow(entry, section, nextEntry) {
   const { stop, visible, label } = entry;
   const low = isLow(stop);
   const hasNote = Boolean(stop.note && stop.note.trim());
-  const attrs = `class="stop${hasNote ? '' : ' no-note'}" data-stop="${esc(stop.id)}" data-number="${entry.number}" data-label="${esc(label)}"${low ? ' data-low' : ''}${visible ? '' : ' hidden'}`;
+  const attrs = `class="stop${hasNote ? '' : ' no-note'}${entry.offRoute ? ' off-route' : ''}" data-stop="${esc(stop.id)}" data-number="${entry.number}" data-label="${esc(label)}"${low ? ' data-low' : ''}${visible ? '' : ' hidden'}`;
   const time = stop.minutes ? `<span class="time">${esc(formatMinutes(stop.minutes))}</span>` : '';
   const rating = stop.rating
     ? renderStarCompact(stop.rating)
     : '';
   const note = stop.note && stop.note.trim() ? `<div class="stop-note md">${renderMarkdown(stop.note)}</div>` : '';
   const row =
-    `<li ${attrs}><span class="badge-num">${esc(label)}</span>` +
+    `<li ${attrs}><span class="badge-num${entry.offRoute ? ' off' : ''}">${entry.offRoute ? '•' : esc(label)}</span>` +
     `<div class="stop-main"><div class="stop-head"><h3 class="stop-name">${esc(stop.name)}</h3>${time}</div>` +
     (rating || stop.address ? `<div class="stop-where">${rating}${stop.address ? `<span class="addr"><span class="addr-full">${esc(stop.address)}</span><span class="addr-short">${esc(shortAddress(stop))}</span></span>` : ''}</div>` : '') +
     note +
@@ -35,7 +35,7 @@ function stopRow(entry, section, nextEntry) {
 
   let leg = '';
   if (section.style === 'route' && nextEntry && stop.leg_to_next) {
-    const show = visible && nextEntry.visible;
+    const show = visible && nextEntry.visible && !entry.offRoute && !nextEntry.offRoute;
     leg = `<li class="leg" data-after="${esc(stop.id)}"${show ? '' : ' hidden'} aria-hidden="true"><span>${esc(stop.leg_to_next)}</span></li>`;
   }
   return row + leg;
@@ -49,7 +49,7 @@ function sectionBlock(sec, multi) {
     ? `<span class="sec-count">${esc(plural(sec.count, 'stop'))}</span>` +
       `<span class="sec-time"${sec.minutes ? '' : ' hidden'}>${esc(formatMinutes(sec.minutes))}</span>`
     : '';
-  const links = section.style === 'route' ? `<span class="route-links" data-route-links="${esc(section.id)}">${routeLinks(sec.visibleStops)}</span>` : '';
+  const links = section.style === 'route' ? `<span class="route-links" data-route-links="${esc(section.id)}">${routeLinks(sec.routeStops)}</span>` : '';
   const note = section.note && section.note.trim() ? `<div class="sec-note md clamp">${renderMarkdown(section.note)}</div>` : '';
   return (
     `<section class="sec" data-section="${esc(section.id)}" data-style="${esc(section.style)}">` +
@@ -71,7 +71,7 @@ export function renderTripPage(trip, ctx) {
   const base = config.base_url || '';
   const pagePath = draft ? `/drafts${ctx.path}` : ctx.path;
   const url = `${base}${pagePath}`;
-  const maps = openInMaps(visible);
+  const maps = openInMaps(visible, sections.flatMap((s) => s.routeStops));
   const author = config.author ? `By ${esc(config.author)}` : '';
 
   const data = {
@@ -82,7 +82,7 @@ export function renderTripPage(trip, ctx) {
       letter: s.letter,
       title: s.section.title,
       style: s.section.style,
-      stops: s.section.stops.map((p) => ({ id: p.id, name: p.name, lat: p.lat, lng: p.lng, place_id: p.place_id, rating: p.rating, minutes: p.minutes })),
+      stops: s.section.stops.map((p) => ({ id: p.id, name: p.name, lat: p.lat, lng: p.lng, place_id: p.place_id, rating: p.rating, minutes: p.minutes, ...(p.off_route === true ? { off_route: true } : {}) })),
     })),
   };
 

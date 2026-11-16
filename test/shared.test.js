@@ -224,3 +224,28 @@ test('validateTrip: photo is optional but must use https urls', async () => {
   assert.deepEqual(validateTrip({ ...t, photo: { url: 'https://x/y.jpg' } }, 'a.json'), []);
   assert.match(validateTrip({ ...t, photo: { url: 'javascript:alert(1)' } }, 'a.json')[0], /photo/);
 });
+
+test('off_route: no number, kept out of routeStops, ignored in list sections', () => {
+  const t = pisa();
+  t.sections[0].stops[2].off_route = true; // Corso Italia
+  const [s] = visibleStops(t);
+  assert.deepEqual(s.stops.map((x) => x.label), ['1', '2', '', '3', '4', '5', '6']);
+  assert.equal(s.stops[2].offRoute, true);
+  assert.equal(s.count, 7);
+  assert.equal(s.routeStops.length, 6);
+  assert.ok(!s.routeStops.some((p) => p.name === 'Corso Italia'));
+  t.sections[0].style = 'list';
+  const [l] = visibleStops(t);
+  assert.deepEqual(l.stops.map((x) => x.label), ['1', '2', '3', '4', '5', '6', '7']);
+  assert.equal(l.routeStops.length, 7);
+});
+
+test('off_route must be a boolean; openInMaps directions use route stops only', () => {
+  const t = pisa();
+  t.sections[0].stops[0].off_route = 'yes';
+  assert.ok(validateTrip(t, 'pisa-in-one-walk.json').some((e) => /off_route/.test(e)));
+  const a = stop(1, 1), b = stop(2, 2), c = stop(3, 3);
+  const url = openInMaps([a, b, c], [a, c]).url;
+  assert.match(url, /origin=1,1&destination=3,3/);
+  assert.doesNotMatch(url, /2,2/);
+});

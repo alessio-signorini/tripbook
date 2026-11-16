@@ -32,7 +32,8 @@ export function openMoveTo(trip, stopId) {
   );
 }
 
-function StopForm({ tripId, stop }) {
+function StopForm({ trip, stop }) {
+  const tripId = trip.id;
   const set = (patch) => patchStop(tripId, stop.id, patch);
   const num = (key) => (e) => {
     const v = parseFloat(e.target.value);
@@ -71,6 +72,7 @@ function StopForm({ tripId, stop }) {
       <${Chips} options=${presets} value=${stop.minutes} onChange=${(minutes) => set({ minutes })} format=${formatMinutes} />
       <input type="number" min="1" step="1" placeholder="Custom" value=${stop.minutes ?? ''} onChange=${(e) => { const v = parseInt(e.target.value, 10); set({ minutes: v > 0 ? v : null }); }} style="margin-top:8px" />
     </div>
+    ${findStop(trip, stop.id)?.section.style === 'route' && html`<label class="check"><input type="checkbox" checked=${stop.off_route === true} onChange=${(e) => set({ off_route: e.target.checked ? true : undefined })} /> <span>Recommended, but not on the route</span></label>`}
     <${Field} label="Leg to next stop"><input type="text" placeholder="3 min walk" value=${stop.leg_to_next ?? ''} onInput=${(e) => set({ leg_to_next: e.target.value || null })} /><//>
     <${Field} label="Note (Markdown)"><${AutoTextarea} value=${stop.note} onInput=${(note) => set({ note })} /><//>
     <div class="field"><span>Google place</span>
@@ -88,6 +90,7 @@ export function StopCard({ trip, stop, label, reorder }) {
       <button type="button" class="open" aria-expanded=${expanded} onClick=${() => setOpen(!open)}>
         <span class="stop-num">${label}</span>
         <span class="stop-name">${stop.name || 'Unnamed stop'}</span>
+        ${stop.off_route && html`<span class="badge">Off route</span>`}
         ${stop.minutes && html`<span class="badge">${formatMinutes(stop.minutes)}</span>`}
         ${stop.rating && html`<span dangerouslySetInnerHTML=${{ __html: renderStarCompact(stop.rating) }} />`}
       </button>
@@ -96,6 +99,6 @@ export function StopCard({ trip, stop, label, reorder }) {
         <button role="menuitem" class="danger" onClick=${() => structural(trip.id, 'Deleted.', (t) => deleteStop(t, stop.id))}>Delete stop</button>
       <//>
     </div>
-    ${expanded && html`<${StopForm} tripId=${trip.id} stop=${stop} />`}
+    ${expanded && html`<${StopForm} trip=${trip} stop=${stop} />`}
   </li>`;
 }
