@@ -44,14 +44,19 @@ export function visibleStops(trip, { showLow = trip.kind === 'log', showOffRoute
   const counters = new Map();
   return trip.sections.map((section) => {
     const isRoute = section.style === 'route';
-    const prefix = isRoute ? section.prefix ?? '' : '';
+    const prefix = section.prefix ?? '';
     const hiddenBySolo = only !== null && section.id !== only;
     const stops = section.stops.map((stop) => {
       const offRoute = !isRoute || stop.off_route === true;
       const wanted = (showLow || !isLow(stop)) && (showOffRoute || !offRoute);
       if (!wanted) return { stop, visible: false, offRoute, number: 0, label: '' };
       const visible = !hiddenBySolo;
-      if (offRoute) return { stop, visible, offRoute, number: 0, label: sectionLetter(offCount++) };
+      const nextLabel = () => {
+        const n = (counters.get(prefix) ?? 0) + 1;
+        counters.set(prefix, n);
+        return `${prefix}${n}`;
+      };
+      if (offRoute) return { stop, visible, offRoute, number: 0, label: prefix ? nextLabel() : sectionLetter(offCount++) };
       const n = (counters.get(prefix) ?? 0) + 1;
       counters.set(prefix, n);
       return { stop, visible, offRoute, number: n, label: `${prefix}${n}` };
