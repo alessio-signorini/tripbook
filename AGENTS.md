@@ -44,7 +44,7 @@ Tripbook: a PWA editor plus a static trips site, built from JSON in a private Gi
 - Never commit secrets. `.env` is git-ignored; `examples/data/config.json` must keep an empty Maps key in git (a local key may exist in the working copy: never stage it). Search the staged diff for `AIza` before committing.
 - The editor service worker is cache-first: after a rebuild, unregister it and clear caches when testing in a browser.
 - **Never run** `scripts/create-data-repo.sh`, `setup-editor-pages.sh`, `release.sh` or `setup-auto-release.sh` unless the user asks: they change real GitHub repos.
-- Site-building changes (`src/shared`, `src/site`, `src/build/{build-site,bundle,cli}.mjs`) are auto-released by `.github/workflows/release.yml` on push to `main`; editor-only changes just redeploy the editor.
+- Site-building changes (`src/shared`, `src/site`, `src/build/{build-site,bundle,cli}.mjs`) are auto-released by `.github/workflows/release.yml` on push to `main`; editor-only changes just redeploy the editor. Release is skipped when `HEAD` is already tagged, and it needs `DATA_REPO_TOKEN` with Variables and Actions read/write on the data repo (see `docs/DEPLOY.md` step 13).
 
 ## Workflow
 
