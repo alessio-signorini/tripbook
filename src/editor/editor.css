@@ -111,6 +111,9 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .stop-summary { display: flex; align-items: center; gap: 8px; padding: 4px 8px 4px 0; }
 .stop-summary .open { flex: 1; min-width: 0; text-align: left; background: none; border: 0; cursor: pointer; min-height: 44px; display: flex; align-items: center; gap: 8px; padding: 0 4px; }
 .stop-num { width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.8rem; flex: none; }
+.stop-meta { display: none; flex: none; white-space: nowrap; }
+.stop-meta.off { background: #fff; color: #000; box-shadow: inset 0 0 0 1.5px var(--accent); }
+@media (min-width: 900px) { .stop-meta { display: inline-block; } .stop-name + .stop-meta { margin-left: auto; } }
 .stop-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .stop-form { padding: 4px 14px 14px; border-top: 1px solid var(--border); }
 .reorder .stop-form, .reorder .section-note, .reorder .section-card .add-row { display: none; }

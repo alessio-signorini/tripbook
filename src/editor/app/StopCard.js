@@ -106,6 +106,8 @@ export function StopCard({ trip, stop, label, reorder }) {
       <button type="button" class="open" aria-expanded=${expanded} onClick=${() => setOpen(!open)}>
         <span class="stop-num">${label}</span>
         <span class="stop-name">${stop.name || 'Unnamed stop'}</span>
+        ${stop.minutes > 0 && html`<span class="badge stop-meta">${formatMinutes(stop.minutes)}</span>`}
+        ${stop.off_route === true && html`<span class="badge stop-meta off">Off route</span>`}
       </button>
       <${Menu} label=${`Actions for ${stop.name}`}>
         <button role="menuitem" onClick=${() => openMoveTo(trip, stop.id)}>Move to…</button>
