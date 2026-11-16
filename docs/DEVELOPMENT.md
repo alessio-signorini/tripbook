@@ -55,7 +55,7 @@ Notes for local testing:
 | `schema.test.js` | schema rules (including `photo` and `off_route`), the newer-version message, factories |
 | `maps-links.test.js` | Google Maps directions (always an array, 11-stop chunks, 2048-char cap), route link labels, Open in Google Maps |
 | `format.test.js` | minutes, letters, short addresses, Markdown escaping, star markup, `isLow` |
-| `visible.test.js` | numbering and visibility: low-rated switch, multi-section labels, off-route letters |
+| `visible.test.js` | numbering and visibility: low-rated switch, section prefixes and continued numbering, off-route letters |
 | `render.test.js` | the trip page: numbers, legs, notes, ratings, switches, off-route stops, analytics only on published pages, escaping, share image, listing cards; `#trip-data` carries exactly what the browser needs |
 | `trip-md.test.js` | Markdown output, `llms.txt`, `llms-full.txt`, JSON-LD (no ratings, no dates) |
 | `build-site.test.js` | a full site build: files, inlined CSS and font preload, sitemap, robots, redirects, errors, and **no `.json` file in the output** |

@@ -16,7 +16,7 @@ Tripbook: a PWA editor plus a static trips site, built from JSON in a private Gi
 |---|---|
 | Trip page markup | `src/shared/render/trip.js` (`stopRow`, `sectionBlock`, `tripHeader`, `mobileChrome`, `toggles`) + the matching group in `src/site/site.css` |
 | Trip page behavior | `src/site/trip/`: `main.js` (wiring, switches), `list.js` (rows, totals, links), `sheet.js`, `clamp.js`, `map.js` (pins, lines), `prefs.js` |
-| Numbering, low-rated hiding, off-route letters | `src/shared/visible.js` (used by the build, the page script and the editor) |
+| Numbering, section prefixes, low-rated hiding, off-route letters | `src/shared/visible.js` (used by the build, the page script and the editor) |
 | Google Maps links | `src/shared/maps-links.js` |
 | Listing, 404, robots, sitemap, Markdown, llms, JSON-LD | `src/shared/render/{listing,layout,seo,trip-md,llms,jsonld}.js` |
 | Page `<head>`, CSS inlining, font preload | `src/shared/render/layout.js`; assets in `src/build/build-site.mjs` `buildAssets()` |

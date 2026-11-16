@@ -64,7 +64,7 @@ A personal tool to log places visited on trips and to publish shareable trip log
 - **LLM-friendly output:** every published trip also has a Markdown version, plus `/llms.txt` and `/llms-full.txt`, and JSON-LD on each trip page (§7.10). Drafts get none of these.
 - **Index:** published trips grouped by country, then region, alphabetical. Nothing "live".
 - **Trip kinds:** `guide` (a recommendation) and `log` (a record of a trip). One schema and one template for both.
-- **Sections** have `style: "route"` (numbered path, legs, directions link) or `style: "list"` (pins only).
+- **Sections** have `style: "route"` (numbered path, legs, directions link) or `style: "list"` (pins only). A route section may also set an optional `prefix` for its stop labels (`B` gives B1, B2…).
 - **Stops store everything** (name, address, city, region, country, coordinates), filled from Google at capture time and fully editable afterwards. The build makes no API calls.
 - **Markdown:** a small subset (paragraphs, links, bold, italic, lists) for all notes. Raw HTML is escaped.
 - **Language:** one `lang` per trip (default `"en"`).
@@ -263,6 +263,7 @@ test/
       "title": "",
       "note": "",
       "style": "route",
+      "prefix": "",
       "auto_date": null,
       "stops": [
         {
@@ -304,7 +305,7 @@ Field rules (implement in `validateTrip`; the site build fails with a clear mess
 - `location.country`: non-empty. `country_code`: 2 uppercase letters or empty. `region` and `city`: strings, may be empty.
 - `photo`: optional; `null` or `{ url, thumb, title, author, license, license_url, source_url }`, all strings, `url`, `thumb`, `license_url` and `source_url` must be `https://` (empty allowed for the license fields).
 - `old_paths`: array of strings starting and ending with `/`.
-- `sections`: array (may be empty for a new trip). Section `id` unique within trip. `title`: string (may be empty). `note`: string (may be empty). `style`: `"route" | "list"`. `auto_date`: `YYYY-MM-DD` or null (editor-only, never rendered).
+- `sections`: array (may be empty for a new trip). Section `id` unique within trip. `title`: string (may be empty). `note`: string (may be empty). `style`: `"route" | "list"`. `prefix`: optional string of 0–3 letters/digits (default none). `auto_date`: `YYYY-MM-DD` or null (editor-only, never rendered).
 - Stop `id` unique within trip. `name`: non-empty. `lat` in [-90, 90]; `lng` in [-180, 180]. `place_id`: string or null. `coords_source`: `"device" | "place" | "pin"`. `minutes`: positive integer or null. `leg_to_next`: string or null. `note`: string (may be empty). `rating`: integer 1–5 or null. `off_route`: optional boolean (only meaningful in `route` sections). `captured_at`: ISO string or null.
 - Unknown fields: allowed and preserved (forward compatibility).
 - Declare these shapes as JSDoc `@typedef`s at the top of `schema.js` (`Location`, `Photo`, `Stop`, `Section`, `Trip`, `TripRecord` (§8.1), `Config`) and reference them with `@param`/`@returns` in `visible.js`, the renderers and `src/editor/core/`.
