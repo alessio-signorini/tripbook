@@ -2,3 +2,4 @@ node_modules/
 _site/
 _editor/
 .env
+examples/data/config.json
