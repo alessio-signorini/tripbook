@@ -5,6 +5,7 @@ import {
   setActive, showModal, toast, navigate, saveRecord,
 } from './state.js';
 import { Field, Menu, AutoTextarea } from './fields.js';
+import { PhotoField } from './PhotoField.js';
 import { SectionsSortable, SectionCard } from './Sections.js';
 import { setTitle, addSection, makeGuide } from '../editing.js';
 import { newRecord } from '../sync.js';
@@ -95,6 +96,7 @@ export function TripEditor({ id }) {
       <${Field} label="City (optional)"><input type="text" value=${trip.location.city} onInput=${(e) => setLoc({ city: e.target.value })} /><//>
     </div>
     <p class="path-preview">${path}</p>
+    <${PhotoField} trip=${trip} onChange=${(photo) => set({ photo })} />
     <${Field} label="Trip note"><${AutoTextarea} minRows=${3} placeholder="Markdown: **bold**, *italic*, [links](https://…), lists" value=${trip.note} onInput=${(note) => set({ note })} /><//>
 
     <div class="row space" style="margin-top:20px">

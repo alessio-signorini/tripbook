@@ -8,7 +8,7 @@ import { directionsUrl, shortlistUrl, stopDirectionsUrl, openInMaps } from '../s
 import { renderMarkdown } from '../src/shared/markdown.js';
 import { renderStars, renderStarCompact, isLow } from '../src/shared/rating.js';
 import { visibleStops } from '../src/shared/visible.js';
-import { formatMinutes, sectionLetter } from '../src/shared/format.js';
+import { formatMinutes, sectionLetter, shortAddress } from '../src/shared/format.js';
 
 const load = (p) => JSON.parse(readFileSync(new URL(`../examples/data/${p}`, import.meta.url), 'utf8'));
 const pisa = () => load('published/pisa-in-one-walk.json');
@@ -207,4 +207,21 @@ test('visible: logs show low stops by default; multi-section labels', () => {
 test('visible: unrated stops are never hidden', () => {
   const [s] = visibleStops(pisa(), { showLow: false });
   assert.equal(s.count, 7);
+});
+
+test('shortAddress drops city, region, country and postal parts', () => {
+  const stop = (address, extra = {}) => ({ address, city: 'Santa Barbara', region: 'California', country: 'United States', country_code: 'US', ...extra });
+  assert.equal(shortAddress(stop('1100 Anacapa St, Santa Barbara, CA')), '1100 Anacapa St');
+  assert.equal(shortAddress(stop('1 Main St, Santa Barbara, CA 93101, USA', { country_code: 'USA' })), '1 Main St');
+  assert.equal(shortAddress(stop('Piazza della Stazione, Pisa', { city: 'Pisa' })), 'Piazza della Stazione');
+  assert.equal(shortAddress(stop('Santa Barbara')), 'Santa Barbara');
+  assert.equal(shortAddress(stop('')), '');
+});
+
+test('validateTrip: photo is optional but must use https urls', async () => {
+  const { validateTrip, newTrip } = await import('../src/shared/schema.js');
+  const t = newTrip({ id: 'a', slug: 'a', title: 'A', location: { country: 'X', country_code: '', region: '', city: '' } });
+  assert.deepEqual(validateTrip(t, 'a.json'), []);
+  assert.deepEqual(validateTrip({ ...t, photo: { url: 'https://x/y.jpg' } }, 'a.json'), []);
+  assert.match(validateTrip({ ...t, photo: { url: 'javascript:alert(1)' } }, 'a.json')[0], /photo/);
 });

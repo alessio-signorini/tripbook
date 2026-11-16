@@ -74,6 +74,15 @@ export function validateTrip(trip, file = '') {
     if (!isStr(loc.city)) err('"location.city" must be a string');
   }
 
+  if (trip.photo !== undefined && trip.photo !== null) {
+    const ph = trip.photo;
+    if (!isObj(ph) || !/^https:\/\//.test(ph.url || '') || !(ph.thumb === undefined || /^https:\/\//.test(ph.thumb))) {
+      err('"photo" must be null or an object with an https "url" (and optional https "thumb")');
+    } else if (['title', 'author', 'license', 'license_url', 'source_url'].some((k) => ph[k] !== undefined && !isStr(ph[k]))) {
+      err('"photo" credit fields must be strings');
+    }
+  }
+
   if (!Array.isArray(trip.old_paths) || !trip.old_paths.every((p) => isStr(p) && p.startsWith('/') && p.endsWith('/'))) {
     err('"old_paths" must be an array of strings starting and ending with "/"');
   }
@@ -167,6 +176,7 @@ export function newTrip(fields = {}, config = DEFAULT_CONFIG) {
     note: '',
     lang: config.default_lang || 'en',
     location: { country: '', country_code: '', region: '', city: '' },
+    photo: null,
     old_paths: [],
     sections: [],
     created_at: now,

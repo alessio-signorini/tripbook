@@ -10,6 +10,7 @@ export function tripJsonLd(trip, ctx) {
     name: trip.title,
     description: stripMarkdown(trip.note),
     url: ctx.url,
+    ...(trip.photo?.url ? { image: trip.photo.url } : {}),
     author: { '@type': 'Person', name: ctx.config.author || '' },
     itinerary: {
       '@type': 'ItemList',

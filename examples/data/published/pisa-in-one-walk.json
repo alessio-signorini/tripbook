@@ -7,6 +7,15 @@
   "note": "Arriving by train? This route takes you north through the old town, across the Arno, and ends at Piazza dei Miracoli.",
   "lang": "en",
   "location": { "country": "Italy", "country_code": "IT", "region": "", "city": "Pisa" },
+  "photo": {
+    "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d3/Italy_-_Pisa.jpg/1280px-Italy_-_Pisa.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d3/Italy_-_Pisa.jpg/250px-Italy_-_Pisa.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "title": "Pisa",
+    "author": "Arne Müseler",
+    "license": "CC BY-SA 3.0 de",
+    "license_url": "https://creativecommons.org/licenses/by-sa/3.0/de/deed.en",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Italy_-_Pisa.jpg"
+  },
   "old_paths": [],
   "sections": [
     {

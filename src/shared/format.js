@@ -34,6 +34,15 @@ export function locationText(loc = {}) {
   return [loc.city, loc.region, loc.country].filter(Boolean).join(', ');
 }
 
+/** Street part of an address: drops trailing city, region, country and postal parts. */
+export function shortAddress(stop) {
+  const parts = String(stop.address || '').split(',').map((p) => p.trim()).filter(Boolean);
+  const known = [stop.city, stop.region, stop.country, stop.country_code].filter(Boolean).map((v) => v.toLowerCase());
+  const isTail = (p) => known.includes(p.toLowerCase()) || /^[A-Z]{2}(\s+\d{4,5}(-\d{4})?)?$/.test(p) || /^\d{4,5}(-\d{4})?$/.test(p);
+  while (parts.length > 1 && isTail(parts[parts.length - 1])) parts.pop();
+  return parts.join(', ');
+}
+
 export const kindLabel = (kind) => (kind === 'guide' ? 'Guide' : 'Trip log');
 
 export const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;

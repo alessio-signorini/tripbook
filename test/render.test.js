@@ -9,7 +9,7 @@ const load = (p) => JSON.parse(readFileSync(new URL(`../examples/data/${p}`, imp
 const pisa = () => load('published/pisa-in-one-walk.json');
 const sb = () => load('published/santa-barbara-perfect-day.json');
 const layover = () => load('drafts/pisa-4-hours-layover.json');
-const config = mergeConfig({ ...load('config.json') });
+const config = mergeConfig({ ...load('config.json'), google_maps_api_key: '' });
 const assets = { css: '/assets/site.test.css', js: '/assets/trip.test.js' };
 
 const page = (trip, { draft = false, cfg = config } = {}) =>
@@ -77,4 +77,30 @@ test('Escapes user text', () => {
   const html = page(t);
   assert.doesNotMatch(html, /<img src=x/);
   assert.doesNotMatch(html, /<script>x<\/script>/);
+});
+
+const photo = {
+  url: 'https://upload.wikimedia.org/x/1200px-Pisa.jpg',
+  thumb: 'https://upload.wikimedia.org/x/240px-Pisa.jpg',
+  title: 'Pisa',
+  author: 'Jane <b>Doe</b>',
+  license: 'CC BY-SA 4.0',
+  license_url: 'https://creativecommons.org/licenses/by-sa/4.0',
+  source_url: 'https://commons.wikimedia.org/wiki/File:Pisa.jpg',
+};
+
+test('trip photo: share image only, no credit on the page, no image without photo', () => {
+  const html = page({ ...pisa(), photo });
+  assert.match(html, /<meta property="og:image" content="https:\/\/upload\.wikimedia\.org\/x\/1200px-Pisa\.jpg">/);
+  assert.match(html, /summary_large_image/);
+  assert.doesNotMatch(html, /photo-credit/);
+  assert.doesNotMatch(page({ ...pisa(), photo: null }), /og:image/);
+});
+
+test('listing shows photo thumbnail on the card', async () => {
+  const { renderListing } = await import('../src/shared/render/listing.js');
+  const trip = { ...pisa(), photo };
+  const html = renderListing([{ trip, path: '/italy/pisa/pisa-in-one-walk/' }], { config, assets, version: '0' });
+  assert.match(html, /class="card-photo"[^>]*><img src="https:\/\/upload\.wikimedia\.org\/x\/240px-Pisa\.jpg"/);
+  assert.match(html, /Photo credits/);
 });

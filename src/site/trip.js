@@ -25,6 +25,7 @@ function readShowLow() {
   return body.dataset.showLow === 'true';
 }
 
+const toggle = $('#low-toggle');
 const state = { tab: 'all', showLow: readShowLow(), selected: null };
 let mapView = null;
 
@@ -44,6 +45,7 @@ function update() {
   const results = visibleStops(data, { showLow: state.showLow });
   const shown = scope(results);
   body.dataset.tab = state.tab;
+  body.classList.toggle('hide-stars', Boolean(toggle) && !state.showLow);
 
   for (const sec of results) {
     const el = sectionEls.get(sec.section.id);
@@ -97,7 +99,6 @@ function update() {
     note.textContent = maps.missing > 0 ? `${plural(maps.missing, 'stop')} without a Google place ${maps.missing === 1 ? 'is' : 'are'} not in this list` : '';
   }
 
-  $$('.tab').forEach((t) => t.setAttribute('aria-selected', String(t.dataset.tab === state.tab)));
   if (state.selected && rows.get(state.selected)?.hidden) select(null);
   mapView?.render(shown);
   updateMore();
@@ -110,8 +111,7 @@ function select(id, { scroll = false } = {}) {
   if (id && scroll) rows.get(id).scrollIntoView({ block: 'nearest', behavior: 'smooth' });
 }
 
-/* ---------- toggle, tabs ---------- */
-const toggle = $('#low-toggle');
+/* ---------- low-rated toggle ---------- */
 if (toggle) {
   toggle.checked = state.showLow;
   toggle.addEventListener('change', () => {
@@ -122,13 +122,6 @@ if (toggle) {
     update();
   });
 }
-$$('.tab').forEach((t) =>
-  t.addEventListener('click', () => {
-    state.tab = t.dataset.tab;
-    update();
-    $('#sheet-scroll').scrollTop = 0;
-  }),
-);
 
 rows.forEach((el, id) => {
   el.addEventListener('click', (e) => {
@@ -175,7 +168,7 @@ mobile.addEventListener('change', () => {
 const handle = $('#sheet-handle');
 let drag = null;
 function startDrag(e) {
-  if (!mobile.matches || e.target.closest('.tab, a, input, label')) return;
+  if (!mobile.matches || e.target.closest('a, input, label')) return;
   drag = { y: e.clientY, h: sheet.height(), moved: false };
   sheetEl.setPointerCapture?.(e.pointerId);
   sheetEl.classList.add('dragging');

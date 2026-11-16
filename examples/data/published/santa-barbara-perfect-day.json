@@ -7,6 +7,15 @@
   "note": "One easy day around town.",
   "lang": "en",
   "location": { "country": "United States", "country_code": "US", "region": "California", "city": "Santa Barbara" },
+  "photo": {
+    "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/de/Santa_Barbara_Downtown_%28may_2012%29_%282%29_%28cropped%29.jpg/1280px-Santa_Barbara_Downtown_%28may_2012%29_%282%29_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/de/Santa_Barbara_Downtown_%28may_2012%29_%282%29_%28cropped%29.jpg/250px-Santa_Barbara_Downtown_%28may_2012%29_%282%29_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "title": "Santa Barbara, California",
+    "author": "Pierre André",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Santa_Barbara_Downtown_(may_2012)_(2)_(cropped).jpg"
+  },
   "old_paths": [],
   "sections": [
     {

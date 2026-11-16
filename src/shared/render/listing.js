@@ -1,6 +1,8 @@
 import { renderLayout, esc } from './layout.js';
 import { allVisible } from '../visible.js';
-import { kindLabel, plural } from '../format.js';
+import { kindLabel, plural, formatMinutes, totalMinutes } from '../format.js';
+import { stripMarkdown } from '../markdown.js';
+import { photoCredit } from './photo.js';
 
 const byText = (a, b) => a.localeCompare(b, 'en', { sensitivity: 'base' });
 
@@ -39,9 +41,12 @@ export function sortedTrips(items) {
 }
 
 function card({ trip, path }) {
-  const stops = allVisible(trip).length;
-  const meta = [trip.location.city, plural(stops, 'stop')].filter(Boolean).map(esc).join(' · ');
-  return `<li class="card"><a class="card-title" href="${esc(path)}">${esc(trip.title)}</a><div class="card-meta"><span class="badge badge-${esc(trip.kind)}">${kindLabel(trip.kind)}</span> ${meta}</div></li>`;
+  const visible = allVisible(trip);
+  const minutes = totalMinutes(visible);
+  const meta = [trip.location.city, plural(visible.length, 'stop'), minutes ? formatMinutes(minutes) : ''].filter(Boolean).map(esc).join(' · ');
+  const note = trip.note && trip.note.trim() ? `<p class="card-note">${esc(stripMarkdown(trip.note, 200))}</p>` : '';
+  const photo = trip.photo ? `<a class="card-photo" href="${esc(path)}" tabindex="-1" aria-hidden="true"><img src="${esc(trip.photo.thumb || trip.photo.url)}" alt="" loading="lazy" width="96" height="96"></a>` : '';
+  return `<li class="card${photo ? ' has-photo' : ''}">${photo}<div class="card-text"><div class="card-head"><a class="card-title" href="${esc(path)}">${esc(trip.title)}</a><span class="badge badge-${esc(trip.kind)}">${kindLabel(trip.kind)}</span></div><div class="card-meta">${meta}</div>${note}</div></li>`;
 }
 
 const list = (items) => `<ul class="cards">${items.map(card).join('\n')}</ul>`;
@@ -65,6 +70,9 @@ export function renderListing(items, ctx) {
   }
   if (!groups.length) body = '<p class="empty">No trips yet.</p>';
 
+  const credits = items.filter((i) => i.trip.photo).map((i) => `<li>${esc(i.trip.title)}: ${photoCredit(i.trip.photo)}</li>`);
+  const creditsHtml = credits.length ? `<details class="photo-credits"><summary>Photo credits</summary><ul>${credits.join('')}</ul></details>` : '';
+
   const nav = crumbs.length
     ? `<nav class="crumbs" aria-label="Breadcrumb"><a href="/">${esc(siteTitle)}</a>${crumbs
         .map((c, i) => (i === crumbs.length - 1 ? ` <span aria-hidden="true">›</span> <span aria-current="page">${esc(c.name)}</span>` : ` <span aria-hidden="true">›</span> <a href="${esc(c.path)}">${esc(c.name)}</a>`))
@@ -76,6 +84,7 @@ ${nav}
 <h1>${esc(heading)}</h1>
 ${config.author ? `<p class="by">By ${esc(config.author)}</p>` : ''}
 ${body}
+${creditsHtml}
 </main>`;
 
   return renderLayout({

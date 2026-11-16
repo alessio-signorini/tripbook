@@ -26,6 +26,6 @@ export function renderStarCompact(rating) {
     `<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><defs><linearGradient id="${id}" x1="0" x2="1" y1="0" y2="0">` +
     `<stop offset="${pct}" stop-color="${ACCENT}"/><stop offset="${pct}" stop-color="${EMPTY}"/></linearGradient></defs>` +
     `<path d="${STAR}" fill="url(#${id})"/></svg>` +
-    `<span style="font-size:12px;color:#5F6368">(${rating}/5)</span></span>`
+    `<span style="font-size:12px;line-height:1;color:#5F6368">(${rating}/5)</span></span>`
   );
 }
