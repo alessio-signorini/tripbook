@@ -71,7 +71,7 @@ export function renderTripPage(trip, ctx) {
   const base = config.base_url || '';
   const pagePath = draft ? `/drafts${ctx.path}` : ctx.path;
   const url = `${base}${pagePath}`;
-  const maps = openInMaps(visible, sections.flatMap((s) => s.routeStops));
+  const maps = openInMaps(sections.flatMap((s) => s.routeStops));
   const author = config.author ? `By ${esc(config.author)}` : '';
 
   const data = {

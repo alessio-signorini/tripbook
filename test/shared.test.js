@@ -135,8 +135,8 @@ test('maps-links: 2048 char cap drops place ids', () => {
 test('maps-links: stop directions and open-in-maps choice', () => {
   assert.match(stopDirectionsUrl(stop(1, 2, 'x')), /destination=1,2&travelmode=walking&destination_place_id=x/);
   assert.doesNotMatch(stopDirectionsUrl(stop(1, 2)), /place_id/);
-  const mostly = [stop(1, 1, 'a'), stop(2, 2, 'b'), stop(3, 3)];
-  assert.match(openInMaps(mostly).url, /shortlist/);
+  const all = [stop(1, 1, 'a'), stop(2, 2, 'b')];
+  assert.match(openInMaps(all).url, /shortlist/);
   const few = [stop(1, 1, 'a'), stop(2, 2), stop(3, 3)];
   assert.match(openInMaps(few).url, /\/dir\//);
   assert.equal(openInMaps([]).url, null);
@@ -248,7 +248,7 @@ test('off_route must be a boolean; openInMaps directions use route stops only', 
   t.sections[0].stops[0].off_route = 'yes';
   assert.ok(validateTrip(t, 'pisa-in-one-walk.json').some((e) => /off_route/.test(e)));
   const a = stop(1, 1), b = stop(2, 2), c = stop(3, 3);
-  const url = openInMaps([a, b, c], [a, c]).url;
+  const url = openInMaps([a, c]).url;
   assert.match(url, /origin=1,1&destination=3,3/);
   assert.doesNotMatch(url, /2,2/);
 });

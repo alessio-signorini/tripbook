@@ -56,18 +56,16 @@ export function stopDirectionsUrl(stop) {
 }
 
 /**
- * The "Open in Google Maps" target for a set of visible stops:
- * the shortlist when it covers at least half of them, else the first directions URL through
- * the on-route stops (routeStops).
+ * The "Open in Google Maps" target for the on-route visible stops (off-route ones are excluded):
+ * the shortlist when every stop has a place_id (and fits), else the first directions URL, which
+ * also covers coordinate-only stops.
  * Returns { url }.
  */
-export function openInMaps(stops, routeStops = stops) {
-  const list = shortlistUrl(stops);
-  if (list && shortlistCount(stops) * 2 >= stops.length) {
-    return { url: list };
-  }
+export function openInMaps(routeStops) {
+  const list = shortlistUrl(routeStops);
+  if (list && shortlistCount(routeStops) === routeStops.length) return { url: list };
   const dir = directionsUrl(routeStops);
   const url = Array.isArray(dir) ? dir[0] : dir;
   if (url) return { url };
-  return { url: stops.length === 1 ? stopDirectionsUrl(stops[0]) : null };
+  return { url: routeStops.length === 1 ? stopDirectionsUrl(routeStops[0]) : null };
 }

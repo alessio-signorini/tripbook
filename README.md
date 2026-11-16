@@ -1,75 +1,66 @@
 # Tripbook
 
-Tripbook is a personal tool to log the places you visit and to publish shareable trip logs and city guides. An installable phone/desktop editor saves your trips as JSON in a private GitHub repo, and GitHub Actions turns them into a fast static website. There is no backend: GitHub is the database and Google Maps draws the maps.
+Log the places you visit on a trip, then publish them as a shareable **trip log** or a **city guide**: a map, a numbered route, your notes and ratings, on your own domain.
 
-<!-- Screenshots: add editor (phone), capture sheet and trip page (desktop and mobile) here. -->
+<p align="center">
+  <img src="docs/images/trip-desktop.jpg" alt="A trip guide on desktop: map on the left, the route and stops on the right" width="720">
+  <img src="docs/images/trip-mobile.jpg" alt="The same guide on a phone: full-screen map with a draggable list" width="190">
+</p>
 
-## Features
+Tripbook is two small pieces and no backend. An **editor** (an installable web app) saves your trips as JSON files in a private GitHub repo, and **GitHub Actions** turns that repo into a fast static website. GitHub is the database; Google Maps draws the maps.
+
+## What it does
 
 - **Logs and guides.** A *log* records a trip; a *guide* recommends places. Same data, same page.
-- **Notes everywhere.** The trip, every section and every stop have Markdown notes.
-- **Ratings and the low-rated toggle.** Stops carry 1–5 stars. Readers can show or hide places rated 1–2 (hidden by default on guides, shown on logs); maps, numbers and Google Maps links follow the toggle.
-- **Drafts at live URLs.** Drafts are built at unlisted `/drafts/...` URLs with `noindex`, so you can share them before publishing.
-- **Capture on the go.** "Add place here" finds nearby places, or drops a pin, and files the stop under today's "Day N".
-- **Made for LLMs too.** Every published trip also has a Markdown version, plus `/llms.txt`, `/llms-full.txt` and JSON-LD.
-- **Private by construction.** No dates or times are ever rendered on the public site.
+- **Capture on the go.** "Add place here" finds nearby places (or drops a pin, or takes pasted coordinates) and files the stop under today's "Day N".
+- **Edit anywhere.** Drag stops between sections, add notes (Markdown) and 1–5 star ratings, mark recommended places that are not on the walking route, work offline and sync later.
+- **Drafts and publishing.** Drafts get an unlisted `noindex` URL you can share; publishing moves them to their public URL.
+- **A good page for readers.** Interactive map, walking-route link per section, Google Maps shortlist, a switch to hide low-rated places, and a mobile layout with a draggable bottom sheet.
+- **Friendly to LLMs and search.** Every published trip also has a Markdown version, plus `/llms.txt`, `/llms-full.txt` and JSON-LD.
+- **Private by construction.** Dates and times never appear on the public site; only the built pages are published, never your JSON.
 
-## Architecture
-
-Two repositories, two sites, pinned releases:
+## How it works
 
 ```
- phone / desktop
- ┌──────────────┐  GitHub REST API   ┌─────────────────────────┐
- │ Editor (PWA) │ ─────────────────▶ │ trips (private data repo)│
- │ edit.…       │   token on device  │ config.json              │
- └──────▲───────┘                    │ drafts/*.json            │
-        │ deploys on push            │ published/*.json         │
- ┌──────┴───────┐                    │ .github/workflows/site.yml
- │ tripbook     │                    └────────────┬────────────┘
- │ (public, MIT)│  checked out at TRIPBOOK_REF     │ build + deploy
- │ editor, site │ ◀────────────────────────────────┘
- │ build, tools │                                  ▼
- └──────────────┘                    ┌─────────────────────────┐
-                                     │ Trips site (Pages)      │
-                                     │ trips.…  (only _site/)  │
-                                     └─────────────────────────┘
+ phone / desktop            GitHub REST API          ┌──────────────────────────┐
+ ┌──────────────┐ ───────────────────────────────▶  │ data repo (private)      │
+ │ Editor (PWA) │   token stays on the device        │ config.json              │
+ │ edit.…       │                                    │ drafts/  published/      │
+ └──────▲───────┘                                    │ .github/workflows/site.yml
+        │ deployed from this repo                    └────────────┬─────────────┘
+ ┌──────┴───────┐       checked out at a release tag             │ build + deploy
+ │ tripbook     │ ◀──────────────────────────────────────────────┘
+ │ (this repo)  │                                                 ▼
+ └──────────────┘                                      Trips site (GitHub Pages)
 ```
 
-- Pushing code to `tripbook` redeploys the **editor** only.
-- The **trips site** is built in the data repo from a pinned tripbook release (the `TRIPBOOK_REF` variable). Site-building changes reach the site through a release: pushing them to `main` tags one and rebuilds the site automatically (see `docs/DEPLOY.md`), or run `scripts/release.sh` by hand.
-- The site build refuses trips that use a newer schema than the pinned release supports.
+- **tripbook** (this repo) holds the editor, the site build and the templates. A push redeploys the editor.
+- Your **data repo** holds your trips. Each change rebuilds the site from a **tagged tripbook release**, so the site only changes when you release (and tripbook can do that for you).
+- Stack: plain JavaScript (Node 24, ES modules), Preact + htm for the editor, esbuild, SortableJS, no TypeScript, no framework on the site.
 
-## Local development
+## Run it locally
 
-Requires Node 24 (the devcontainer provides it).
+Needs Node 24 (the devcontainer has it).
 
 ```sh
 npm install
-npm test                          # unit and build tests
-npm run build:example && npm run serve          # example site on http://localhost:8080
-npm run build:editor:demo && npm run serve:editor   # editor on http://localhost:8081, with sample data
+npm test
+npm run build:example && npm run serve                 # example site   -> http://localhost:8080
+npm run build:editor:demo && npm run serve:editor      # editor, sample data -> http://localhost:8081
 ```
 
-`examples/data` holds sample trips (two published, one draft, including a place marked as not on the route). The example Maps key is empty, so maps show a placeholder; put a key in `examples/data/config.json` locally to see real maps (don't commit it).
-
-To try the editor without GitHub or a token, build it with `build:editor:demo`, open http://localhost:8081/#/setup and press **Use sample data** (shown only on localhost). Sync, Publish, Unpublish and Delete then work against a fake repo kept in your browser. Use `build:editor` (no demo) for the real thing.
-
-
-## How content works
-
-- A trip lives in `drafts/<id>.json` or `published/<id>.json`; the folder is its status and the file name is its stable `id`.
-- URLs are `/<country>/<region?>/<city?>/<slug>/`, for example `/italy/pisa/4-hours-layover/`. Drafts use the same path under `/drafts/`; publishing makes the draft URL disappear. If you rename a published trip's location or slug, the old URL redirects.
-- Country names in URLs come from `config.json` `country_slugs` (for example `US` becomes `usa`).
-- Editing is local first. **Sync** commits to the trip's folder; **Publish** and **Unpublish** move the file in one commit. If a file changed elsewhere you choose *Load theirs* or *Overwrite*; nothing is merged.
-
-## Privacy
-
-`captured_at`, `created_at` and `updated_at` exist only in the JSON. The public site never shows dates or times, and sitemaps carry no `lastmod`. Only the build output (`_site/`) is published; your JSON files and config are never served.
+In the editor, open `#/setup` and press **Use sample data** to try everything without GitHub or a token. Maps show a placeholder until you add a Google Maps key (see [Development](docs/DEVELOPMENT.md)).
 
 ## Run your own
 
-Use the hosted editor if someone shares one, or fork this repo and deploy your own. Either way you create your own data repo and follow [docs/DEPLOY.md](docs/DEPLOY.md) step by step.
+Fork this repo, create a data repo, and follow **[docs/DEPLOY.md](docs/DEPLOY.md)**. It covers domains, DNS, Google Cloud keys, tokens and automatic releases.
+
+## Documentation
+
+- [docs/DEPLOY.md](docs/DEPLOY.md): set up your own instance, step by step, plus troubleshooting
+- [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md): local development, tests, code layout, releases
+- [docs/DATA-MODEL.md](docs/DATA-MODEL.md): trip and config JSON, URLs, privacy rules, LLM output
+- [BUILD.md](BUILD.md): the full build spec an AI coding agent can follow to regenerate this project
 
 ## License
 

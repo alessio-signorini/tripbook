@@ -91,7 +91,7 @@ function update() {
   $$('[data-total-time]').forEach((el) => (el.textContent = formatMinutes(total)));
   $$('[data-total-wrap]').forEach((el) => (el.hidden = !total));
 
-  const maps = openInMaps(visible, shown.flatMap((s) => s.routeStops));
+  const maps = openInMaps(shown.flatMap((s) => s.routeStops));
   $$('[data-open-maps]').forEach((a) => {
     a.hidden = !maps.url;
     if (maps.url) a.href = maps.url;
