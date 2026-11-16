@@ -8,6 +8,6 @@ export const layover = () => load('drafts/pisa-4-hours-layover.json');
 /** Santa Barbara with both sections as routes (the example ships them as lists). */
 export const sbRoutes = () => {
   const t = sb();
-  t.sections.forEach((s) => (s.style = 'route'));
+  t.sections.forEach((s, i) => Object.assign(s, { style: 'route', prefix: 'AB'[i] }));
   return t;
 };

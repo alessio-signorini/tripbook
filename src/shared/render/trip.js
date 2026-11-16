@@ -30,7 +30,7 @@ export function tripClientData(trip) {
     kind: trip.kind,
     sections: visibleStops(trip).map((s) => ({
       id: s.section.id,
-      letter: s.letter,
+      prefix: s.prefix,
       title: s.section.title,
       style: s.section.style,
       stops: s.section.stops.map(pick),
@@ -62,10 +62,10 @@ function stopRow(entry, section, nextEntry) {
   return row + `<li class="leg" data-after="${esc(stop.id)}"${show ? '' : ' hidden'} aria-hidden="true"><span>${esc(stop.leg_to_next)}</span></li>`;
 }
 
-/** <section class="sec">: head (letter · title, count, time, route links) only when there are several sections or a title. */
+/** <section class="sec">: head (prefix · title, count, time, route links) only when there are several sections or a title. */
 function sectionBlock(sec, multi) {
-  const { section, letter } = sec;
-  const titleText = [letter, section.title].filter(Boolean).join(' · ');
+  const { section, prefix } = sec;
+  const titleText = [prefix, section.title].filter(Boolean).join(' · ');
   const meta = multi
     ? `<span class="sec-count">${esc(plural(sec.count, 'stop'))}</span>` +
       `<span class="sec-time"${sec.minutes ? '' : ' hidden'}>${esc(formatMinutes(sec.minutes))}</span>`

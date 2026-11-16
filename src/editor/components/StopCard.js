@@ -5,7 +5,7 @@ import { findStop, autofillLocation, moveStop, deleteStop } from '../core/editin
 import { getPosition } from '../core/places.js';
 import { Field, Menu, StarInput, AutoTextarea, Chips, memo } from './controls.js';
 import { MapPicker } from './MapPicker.js';
-import { formatMinutes, sectionLetter } from '../../shared/format.js';
+import { formatMinutes } from '../../shared/format.js';
 
 const chipMinutes = (n) => formatMinutes(n).replace(/ min$/, '');
 
@@ -28,7 +28,7 @@ function openMoveTo(tripId, stopId) {
     () =>
       html`<ul class="trip-list">${trip.sections.map(
         (s, i) => html`<li class="trip-row" key=${s.id}>
-          <span class="trip-link"><span class="trip-title">${sectionLetter(i)}${s.title ? ` · ${s.title}` : ''}</span></span>
+          <span class="trip-link"><span class="trip-title">${s.title || `Section ${i + 1}`}</span></span>
           <button class="btn btn-small" onClick=${() => act(s.id, 0)}>Top</button>
           <button class="btn btn-small" onClick=${() => act(s.id, Infinity)}>Bottom</button>
         </li>`,

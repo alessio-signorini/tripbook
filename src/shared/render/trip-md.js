@@ -37,7 +37,7 @@ export function renderTripMarkdown(trip, ctx) {
 
   for (const sec of sections) {
     const title = sec.section.title;
-    if (sec.letter) out.push(`## ${sec.letter}${title ? ` · ${title}` : ''}`);
+    if (sec.prefix) out.push(`## ${sec.prefix}${title ? ` · ${title}` : ''}`);
     else if (title) out.push(`## ${title}`);
     if (sec.section.note && sec.section.note.trim()) out.push(sec.section.note.trim(), '');
     else if (multi || title) out.push('');

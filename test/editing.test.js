@@ -8,7 +8,7 @@ import { visibleStops } from '../src/shared/visible.js';
 const sb = () => JSON.parse(readFileSync(new URL('../examples/data/published/santa-barbara-perfect-day.json', import.meta.url), 'utf8'));
 const sbRoutes = () => {
   const t = sb();
-  t.sections.forEach((s) => (s.style = 'route'));
+  t.sections.forEach((s, i) => Object.assign(s, { style: 'route', prefix: 'AB'[i] }));
   return t;
 };
 const ids = (section) => section.stops.map((s) => s.id);

@@ -4,7 +4,7 @@ import { structural, updateTrip, confirmDialog, navigate } from '../state/index.
 import { StopCard } from './StopCard.js';
 import { Menu, AutoTextarea } from './controls.js';
 import { moveSection, moveStop, deleteSection } from '../core/editing.js';
-import { sectionLetter, plural } from '../../shared/format.js';
+import { plural } from '../../shared/format.js';
 
 const SORTABLE_OPTIONS = {
   animation: 150,
@@ -90,7 +90,7 @@ export function SectionCard({ trip, entry, index, reorder }) {
   return html`<section class="section-card" data-id=${section.id}>
     <div class="section-head">
       <span class="drag drag-section" aria-hidden="true">⠿</span>
-      <span class="letter">${sectionLetter(index)}</span>
+      <input class="prefix" type="text" maxlength="3" placeholder="–" title="Label prefix for numbered stops (e.g. B gives B1, B2)" aria-label="Section prefix" value=${section.prefix ?? ''} onInput=${(e) => set({ prefix: e.target.value.trim() })} />
       <input class="title" type="text" placeholder="Section title" aria-label="Section title" value=${section.title} onInput=${(e) => set({ title: e.target.value })} />
       <div class="segmented" role="group" aria-label="Section style">
         <button type="button" aria-pressed=${isRoute} onClick=${() => set({ style: 'route' })}>Route</button>

@@ -54,19 +54,26 @@ test('off_route: no number, kept out of routeStops, list sections are all off-ro
   assert.equal(l.routeStops.length, 0);
 });
 
-test('section letters only when several route sections; list sections are lettered off-route', () => {
+test('no prefix by default and numbers continue; prefix restarts per prefix; list sections are lettered off-route', () => {
   const t = pisa();
   const food = structuredClone(sbRoutes().sections[0]);
   food.style = 'list';
   food.id = 'food';
   t.sections.push(food);
   const [r, f] = visibleStops(t);
-  assert.equal(r.letter, '');
+  assert.equal(r.prefix, '');
   assert.equal(r.stops[0].label, '1');
-  assert.equal(f.letter, '');
+  assert.equal(f.prefix, '');
   assert.ok(f.stops.every((x) => x.offRoute && /^[A-Z]+$/.test(x.label)));
   const two = sbRoutes();
-  assert.deepEqual(visibleStops(two).map((x) => x.letter), ['A', 'B']);
+  two.sections.forEach((x) => (x.prefix = ''));
+  const plain = visibleStops(two);
+  assert.deepEqual(plain.map((x) => x.prefix), ['', '']);
+  assert.equal(plain[1].stops[0].label, String(plain[0].count + 1));
+  two.sections[1].prefix = 'B';
+  const pre = visibleStops(two);
+  assert.equal(pre[0].stops[0].label, '1');
+  assert.equal(pre[1].stops[0].label, 'B1');
 });
 
 test('only keeps labels but hides other sections', () => {

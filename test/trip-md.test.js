@@ -13,7 +13,7 @@ const pisa = () => load('published/pisa-in-one-walk.json');
 const sb = () => load('published/santa-barbara-perfect-day.json');
 const sbRoutes = () => {
   const t = sb();
-  t.sections.forEach((s) => (s.style = 'route'));
+  t.sections.forEach((s, i) => Object.assign(s, { style: 'route', prefix: 'AB'[i] }));
   return t;
 };
 const layover = () => load('drafts/pisa-4-hours-layover.json');
