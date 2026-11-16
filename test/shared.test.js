@@ -137,7 +137,6 @@ test('maps-links: stop directions and open-in-maps choice', () => {
   assert.doesNotMatch(stopDirectionsUrl(stop(1, 2)), /place_id/);
   const mostly = [stop(1, 1, 'a'), stop(2, 2, 'b'), stop(3, 3)];
   assert.match(openInMaps(mostly).url, /shortlist/);
-  assert.equal(openInMaps(mostly).missing, 1);
   const few = [stop(1, 1, 'a'), stop(2, 2), stop(3, 3)];
   assert.match(openInMaps(few).url, /\/dir\//);
   assert.equal(openInMaps([]).url, null);

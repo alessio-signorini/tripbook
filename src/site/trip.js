@@ -94,10 +94,6 @@ function update() {
     a.hidden = !maps.url;
     if (maps.url) a.href = maps.url;
   });
-  const note = $('[data-maps-note]');
-  if (note) {
-    note.textContent = maps.missing > 0 ? `${plural(maps.missing, 'stop')} without a Google place ${maps.missing === 1 ? 'is' : 'are'} not in this list` : '';
-  }
 
   if (state.selected && rows.get(state.selected)?.hidden) select(null);
   mapView?.render(shown);

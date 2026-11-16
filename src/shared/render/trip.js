@@ -16,10 +16,6 @@ function routeLinks(stops) {
     .join(' ');
 }
 
-function mapsNote(missing) {
-  return missing > 0 ? `${plural(missing, 'stop')} without a Google place ${missing === 1 ? 'is' : 'are'} not in this list` : '';
-}
-
 function stopRow(entry, section, nextEntry) {
   const { stop, visible, label } = entry;
   const low = isLow(stop);
@@ -120,7 +116,6 @@ ${tripNote}
 </div>
 <div class="trip-header-actions">
 <div class="trip-actions">${mapsBtn}<button type="button" class="btn btn-secondary d-only" id="share" aria-label="Share">${icons.share}<span>Share</span></button></div>
-<div class="maps-note d-only" data-maps-note>${esc(mapsNote(maps.missing))}</div>
 </div>
 </header>
 <div class="m-card"><div class="m-title">${esc(trip.title)}</div><div class="m-meta">${mobileMeta}</div></div>
