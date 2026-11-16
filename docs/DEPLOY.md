@@ -101,21 +101,31 @@ Create a fine-grained token at <https://github.com/settings/personal-access-toke
 - Repository access: only the data repo.
 - Permissions: Contents = Read and write. Optional: Actions = Read and write (for the Rebuild button).
 
-## 13. Open the editor
+## 13. Automatic releases
+
+Create a second fine-grained token at <https://github.com/settings/personal-access-tokens/new>: only the data repo, with **Variables = Read and write** and **Actions = Read and write**. Then run:
+
+```sh
+scripts/setup-auto-release.sh
+```
+
+It stores `DATA_REPO` (variable) and `DATA_REPO_TOKEN` (secret, which you paste) on the tripbook repo. From then on, every push to `main` that changes site-building code (`src/shared`, `src/site`, the site build scripts, `package.json`) runs the tests, tags the next patch version (`v0.1.1`, `v0.1.2`, …), points the data repo's `TRIPBOOK_REF` at it and rebuilds the site. Editor-only changes redeploy the editor and do not release. Without the token the tag is still created, and the run prints a notice.
+
+## 14. Open the editor
 
 Open `https://edit.trips.<your-domain>` on your phone and desktop, run Setup with `<you>/trips` and the token, then install it to your home screen so the device keeps your offline drafts.
 
-## 14. Optional settings
+## 15. Optional settings
 
 In the editor's Settings: add a Google Analytics ID (used on published trips and listing pages only, never on drafts or the editor). Set `ai_crawlers` to `disallow` if you do not want AI crawlers (this also stops `llms.txt` and `llms-full.txt` from being written).
 
-## 15. Day to day
+## 16. Day to day
 
 - Editing trips needs nothing else; Sync and Publish rebuild the site.
 - Pushing code to `tripbook` redeploys the editor only.
-- To change the trips site's look or behavior, run `scripts/release.sh <next version>`; it moves `TRIPBOOK_REF` and rebuilds the data repo named by `DATA_REPO` in `.env`.
+- Changes to the trips site's look or behavior go live by themselves: push to `main` and the release workflow does the rest (step 13). To release by hand, use `scripts/release.sh <version>` or `gh workflow run release.yml`.
 
-## 16. Troubleshooting
+## 17. Troubleshooting
 
 - **Pages 404**: wait for the first deploy and check the Actions tab of the repo.
 - **SSL error on a subdomain**: the Cloudflare proxy is on. Switch the record to DNS only.

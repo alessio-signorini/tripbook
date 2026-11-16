@@ -37,7 +37,7 @@ Two repositories, two sites, pinned releases:
 ```
 
 - Pushing code to `tripbook` redeploys the **editor** only.
-- The **trips site** is built in the data repo from a pinned tripbook release (the `TRIPBOOK_REF` variable). Template changes reach the site only through `scripts/release.sh`.
+- The **trips site** is built in the data repo from a pinned tripbook release (the `TRIPBOOK_REF` variable). Site-building changes reach the site through a release: pushing them to `main` tags one and rebuilds the site automatically (see `docs/DEPLOY.md`), or run `scripts/release.sh` by hand.
 - The site build refuses trips that use a newer schema than the pinned release supports.
 
 ## Local development

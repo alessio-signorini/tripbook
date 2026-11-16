@@ -1,0 +1,64 @@
+name: Release
+# When site-building code changes on main: test, tag the next patch release, point the
+# data repo's site build at it and rebuild. Editor-only changes never trigger this.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/shared/**"
+      - "src/site/**"
+      - "src/build/build-site.mjs"
+      - "src/build/bundle.mjs"
+      - "package.json"
+      - "package-lock.json"
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: release
+  cancel-in-progress: false
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      DATA_REPO: ${{ vars.DATA_REPO }}
+      DATA_REPO_TOKEN: ${{ secrets.DATA_REPO_TOKEN }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - id: tag
+        name: Pick the next version
+        run: |
+          if git tag --points-at HEAD | grep -q '^v'; then
+            echo "HEAD is already released; nothing to do."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          MM=$(node -p "require('./package.json').version.split('.').slice(0, 2).join('.')")
+          LAST=$(git tag -l "v$MM.*" | sed "s/^v$MM\.//" | sort -n | tail -1)
+          TAG="v$MM.$(( ${LAST:--1} + 1 ))"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Releasing $TAG"
+      - if: steps.tag.outputs.skip != 'true'
+        name: Tag and push
+        run: |
+          git tag "${{ steps.tag.outputs.tag }}"
+          git push origin "${{ steps.tag.outputs.tag }}"
+      - if: steps.tag.outputs.skip != 'true' && env.DATA_REPO != '' && env.DATA_REPO_TOKEN != ''
+        name: Point the data repo at the release and rebuild
+        env:
+          GH_TOKEN: ${{ secrets.DATA_REPO_TOKEN }}
+        run: |
+          gh variable set TRIPBOOK_REF -R "$DATA_REPO" -b "${{ steps.tag.outputs.tag }}"
+          gh workflow run site.yml -R "$DATA_REPO"
+      - if: steps.tag.outputs.skip != 'true' && (env.DATA_REPO == '' || env.DATA_REPO_TOKEN == '')
+        run: |
+          echo "::notice::Tagged ${{ steps.tag.outputs.tag }}, but DATA_REPO (variable) or DATA_REPO_TOKEN (secret) is not set, so the site was not rebuilt. Run scripts/setup-auto-release.sh."
