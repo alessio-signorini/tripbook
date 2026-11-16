@@ -136,15 +136,15 @@ test('syncTrip: published path change appends old path once', async () => {
   assert.deepEqual(rec.trip.old_paths, ['/italy/pisa/pisa/']);
 });
 
-test('publishTrip syncs dirty drafts first, then moves', async () => {
+test('publishTrip commits a never-synced trip in a single move', async () => {
   const log = [];
   const fake = {
     putFile: async () => (log.push('put'), 'sha1'),
     moveFile: async (from, to, json, sha, msg) => (log.push(`move ${from} -> ${to} ${sha} ${msg}`), 'sha9'),
   };
   const rec = await publishTrip(fake, newRecord(validTrip()), DEFAULT_CONFIG);
-  assert.equal(log[0], 'put');
-  assert.match(log[1], /^move drafts\/.+ -> published\/.+ sha1 Publish: Pisa$/);
+  assert.equal(log.length, 1);
+  assert.match(log[0], /^move drafts\/.+ -> published\/.+ null Publish: Pisa$/);
   assert.deepEqual([rec.folder, rec.sha, rec.dirty], ['published', 'sha9', false]);
 });
 

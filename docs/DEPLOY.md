@@ -159,7 +159,7 @@ In the editor's **Settings** (they are saved to the data repo's `config.json`): 
 
 ## Day to day
 
-- **Writing:** use the editor. **Sync** commits to the trip's folder; **Publish** and **Unpublish** move the file between `drafts/` and `published/` in one commit. Every commit rebuilds the site (about a minute).
+- **Writing:** use the editor. **Sync** commits to the trip's folder; **Publish** and **Unpublish** move the file between `drafts/` and `published/` in one commit (publishing a new trip is also one commit, so only one rebuild). Every commit rebuilds the site (about a minute).
 - **Drafts** are live at an unlisted `/drafts/...` URL with `noindex`, ready to share before publishing.
 - **Code changes:** push to `main`. The editor redeploys by itself. Site-building changes are released automatically (step 13).
 - **Manual release:** `scripts/release.sh <version>`, or run the **Release** workflow from the Actions tab.

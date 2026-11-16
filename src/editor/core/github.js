@@ -114,14 +114,10 @@ export function createGithub({ owner, repo, branch, token }) {
       const ref = await request('GET', `/git/ref/heads/${encodeURIComponent(currentBranch)}`);
       const commit = await request('GET', `/git/commits/${ref.object.sha}`);
       const current = await api.getFile(fromPath);
-      if (!current || current.sha !== expectedFromSha) throw new ConflictError();
-      const tree = await request('POST', '/git/trees', {
-        base_tree: commit.tree.sha,
-        tree: [
-          { path: toPath, mode: '100644', type: 'blob', content: serialize(json) },
-          { path: fromPath, mode: '100644', type: 'blob', sha: null },
-        ],
-      });
+      if (expectedFromSha ? !current || current.sha !== expectedFromSha : current) throw new ConflictError();
+      const entries = [{ path: toPath, mode: '100644', type: 'blob', content: serialize(json) }];
+      if (current) entries.push({ path: fromPath, mode: '100644', type: 'blob', sha: null });
+      const tree = await request('POST', '/git/trees', { base_tree: commit.tree.sha, tree: entries });
       const created = await request('POST', '/git/commits', { message, tree: tree.sha, parents: [ref.object.sha] });
       await request('PATCH', `/git/refs/heads/${encodeURIComponent(currentBranch)}`, { sha: created.sha });
       return (await api.getFile(toPath)).sha;

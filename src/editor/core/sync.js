@@ -41,11 +41,11 @@ export async function syncTrip(gh, rec, config) {
 }
 
 export async function publishTrip(gh, rec, config) {
-  let cur = rec;
-  if (rec.dirty || rec.folder !== 'drafts') cur = await syncTrip(gh, { ...rec, folder: rec.folder || 'drafts' }, config);
-  const { trip, path } = prepare(cur, config);
-  const sha = await gh.moveFile(filePath('drafts', trip.id), filePath('published', trip.id), trip, cur.sha, `Publish: ${trip.title}`);
-  return { ...cur, trip, folder: 'published', sha, dirty: false, synced_at: new Date().toISOString(), path_at_sync: path };
+  if (rec.folder === 'published') return syncTrip(gh, rec, config);
+  // Single commit (one CI run): write to published/ and remove the draft, if any.
+  const { trip, path } = prepare(rec, config);
+  const sha = await gh.moveFile(filePath('drafts', trip.id), filePath('published', trip.id), trip, rec.folder ? rec.sha : null, `Publish: ${trip.title}`);
+  return { ...rec, trip, folder: 'published', sha, dirty: false, synced_at: new Date().toISOString(), path_at_sync: path, auto_sync: true };
 }
 
 export async function unpublishTrip(gh, rec, config) {

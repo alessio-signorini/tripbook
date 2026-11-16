@@ -59,7 +59,7 @@ export function createFakeGithub() {
     },
     async moveFile(fromPath, toPath, json, expectedFromSha) {
       const files = read();
-      if (!files[fromPath] || files[fromPath].sha !== expectedFromSha) throw new ConflictError();
+      if (expectedFromSha ? files[fromPath]?.sha !== expectedFromSha : files[fromPath]) throw new ConflictError();
       delete files[fromPath];
       const next = newSha();
       files[toPath] = { data: JSON.parse(serialize(json)), sha: next };
