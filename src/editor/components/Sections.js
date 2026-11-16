@@ -94,6 +94,7 @@ export function SectionCard({ trip, entry, index, reorder }) {
       <input class="title" type="text" placeholder="Section title" aria-label="Section title" value=${section.title} onInput=${(e) => set({ title: e.target.value })} />
       <div class="segmented" role="group" aria-label="Section style">
         <button type="button" aria-pressed=${isRoute} onClick=${() => set({ style: 'route' })}>Route</button>
+        <button type="button" aria-pressed=${section.style === 'poi'} onClick=${() => set({ style: 'poi' })}>POI</button>
         <button type="button" aria-pressed=${section.style === 'list'} onClick=${() => set({ style: 'list' })}>List</button>
       </div>
       <span class="hint">${plural(section.stops.length, 'stop')}</span>

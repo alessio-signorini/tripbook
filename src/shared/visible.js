@@ -29,6 +29,7 @@ import { sectionLetter, totalMinutes } from './format.js';
  * A stop is off the route when it is flagged `off_route` inside a `route` section: it stays in the
  * list and on the map, is left out of the path, legs and route links, and is labelled with a letter
  * (A, B, C... across the whole trip) instead of a number. Every stop of a `list` section is off-route.
+ * A `poi` section is numbered like a route but unordered: no path, legs or route links (`routeStops` is empty).
  * Each section may set a `prefix` (e.g. "B" gives B1, B2...). Numbers continue across route sections
  * that share the same prefix (including none), so unprefixed sections number 1..n through the trip.
  * `only` (a section id) hides every other section's stops without changing labels.
@@ -44,10 +45,11 @@ export function visibleStops(trip, { showLow = trip.kind === 'log', showOffRoute
   const counters = new Map();
   return trip.sections.map((section) => {
     const isRoute = section.style === 'route';
+    const isList = section.style === 'list';
     const prefix = section.prefix ?? '';
     const hiddenBySolo = only !== null && section.id !== only;
     const stops = section.stops.map((stop) => {
-      const offRoute = !isRoute || stop.off_route === true;
+      const offRoute = isList || (isRoute && stop.off_route === true);
       const wanted = (showLow || !isLow(stop)) && (showOffRoute || !offRoute);
       if (!wanted) return { stop, visible: false, offRoute, number: 0, label: '' };
       const visible = !hiddenBySolo;
@@ -62,7 +64,7 @@ export function visibleStops(trip, { showLow = trip.kind === 'log', showOffRoute
       return { stop, visible, offRoute, number: n, label: `${prefix}${n}` };
     });
     const visible = stops.filter((s) => s.visible).map((s) => s.stop);
-    const route = stops.filter((s) => s.visible && !s.offRoute).map((s) => s.stop);
+    const route = !isRoute ? [] : stops.filter((s) => s.visible && !s.offRoute).map((s) => s.stop);
     return { section, prefix, stops, visibleStops: visible, routeStops: route, count: visible.length, minutes: totalMinutes(visible) };
   });
 }

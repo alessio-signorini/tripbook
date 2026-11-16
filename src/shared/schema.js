@@ -48,7 +48,7 @@
  * @property {string} id                 Unique in the trip ("s-xxxxxxxx").
  * @property {string} title
  * @property {string} note               Markdown.
- * @property {'route'|'list'} style      route: numbered path with legs and route links; list: pins only.
+ * @property {'route'|'poi'|'list'} style route: numbered path with legs and route links; poi: numbered pins, no path (unordered); list: lettered pins only.
  * @property {string} [prefix]          Optional label prefix for numbered stops ("B" gives B1, B2...); default none.
  * @property {string|null} auto_date     YYYY-MM-DD, set by capture in logs; never rendered.
  * @property {Stop[]} stops
@@ -189,7 +189,7 @@ export function validateTrip(trip, file = '') {
     else sectionIds.add(s.id);
     if (!isStr(s.title)) err(`${sp}.title must be a string`);
     if (!isStr(s.note)) err(`${sp}.note must be a string`);
-    if (s.style !== 'route' && s.style !== 'list') err(`${sp}.style must be "route" or "list"`);
+    if (!['route', 'poi', 'list'].includes(s.style)) err(`${sp}.style must be "route", "poi" or "list"`);
     if (s.prefix !== undefined && !(isStr(s.prefix) && /^[A-Za-z0-9]{0,3}$/.test(s.prefix))) {
       err(`${sp}.prefix must be up to 3 letters or digits`);
     }

@@ -54,6 +54,17 @@ test('off_route: no number, kept out of routeStops, list sections are all off-ro
   assert.equal(l.routeStops.length, 0);
 });
 
+test('poi sections are numbered like routes but have no route stops; off_route is ignored', () => {
+  const t = pisa();
+  t.sections[0].stops[1].off_route = true;
+  const [route] = visibleStops(t);
+  t.sections[0].style = 'poi';
+  const [poi] = visibleStops(t);
+  assert.equal(poi.count, route.count);
+  assert.ok(poi.stops.filter((x) => x.visible).every((x) => !x.offRoute && /^\d+$/.test(x.label)));
+  assert.equal(poi.routeStops.length, 0);
+});
+
 test('no prefix by default and numbers continue; prefix restarts per prefix; list sections are lettered off-route', () => {
   const t = pisa();
   const food = structuredClone(sbRoutes().sections[0]);

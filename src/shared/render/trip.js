@@ -143,7 +143,7 @@ export function renderTripPage(trip, ctx) {
   const visibleCount = sections.reduce((n, s) => n + s.count, 0);
   const total = sections.reduce((n, s) => n + s.minutes, 0);
   const lowCount = trip.sections.reduce((n, s) => n + s.stops.filter(isLow).length, 0);
-  const offCount = trip.sections.reduce((n, s) => n + (s.style === 'route' ? s.stops.filter((p) => p.off_route === true).length : s.stops.length), 0);
+  const offCount = trip.sections.reduce((n, s) => n + (s.style === 'route' ? s.stops.filter((p) => p.off_route === true).length : s.style === 'list' ? s.stops.length : 0), 0);
   const defaultShowLow = trip.kind === 'log';
   const url = `${config.base_url || ''}${draft ? `/drafts${ctx.path}` : ctx.path}`;
   const mapsUrl = openInMaps(sections.flatMap((s) => s.routeStops)).url;
