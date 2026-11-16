@@ -15,7 +15,8 @@ Stores two things on the tripbook repo, read by .github/workflows/release.yml:
 
 Create the token first (fine-grained, only your data repo):
   https://github.com/settings/personal-access-tokens/new
-  Repository permissions: Variables = Read and write, Actions = Read and write.
+  Repository permissions: Variables = Read and write, Actions = Read and write (Metadata = Read).
+  Repository access must include the data repo; without Variables the release fails with HTTP 403.
 
   --code-repo <o/name>   The tripbook repo (default: the current repo, via gh)
   -h, --help             Show this help

@@ -58,6 +58,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.DATA_REPO_TOKEN }}
         run: |
+          case "$DATA_REPO" in */*) ;; *) DATA_REPO="${{ github.repository_owner }}/$DATA_REPO" ;; esac
           gh variable set TRIPBOOK_REF -R "$DATA_REPO" -b "${{ steps.tag.outputs.tag }}"
           gh workflow run site.yml -R "$DATA_REPO"
       - if: steps.tag.outputs.skip != 'true' && (env.DATA_REPO == '' || env.DATA_REPO_TOKEN == '')

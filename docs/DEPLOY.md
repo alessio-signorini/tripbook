@@ -141,6 +141,18 @@ scripts/setup-auto-release.sh
 
 It stores `DATA_REPO` (variable) and `DATA_REPO_TOKEN` (secret, which you paste) on the tripbook repo. From then on, every push to `main` that changes site-building code (`src/shared`, `src/site`, the site build scripts, `package.json`) runs the tests, tags the next patch version (`v0.1.1`, `v0.1.2`, …), points the data repo's `TRIPBOOK_REF` at it and rebuilds the site. Editor-only changes redeploy the editor and do not release.
 
+**The token needs all of these**, and the repository access must include the data repo: *Variables: Read and write* (sets `TRIPBOOK_REF`; Actions or Contents access does not cover it), *Actions: Read and write* (starts the Site workflow) and *Metadata: Read*. Without Variables the Release run fails with `HTTP 403: Resource not accessible by personal access token (.../actions/variables)`: the tag is created but the site stays on the old release.
+
+**Test it:** push a commit to `main` that touches site code (`src/shared/`, `src/site/`, `package.json`, …). Re-running a failed Release, or running it manually, does nothing when `HEAD` already has a `v*` tag, so you need a new commit. Then check:
+
+```sh
+gh run watch -R you/tripbook                      # Release succeeds, new tag (e.g. v0.1.8)
+gh variable list -R you/trips.example.com         # TRIPBOOK_REF is the new tag
+gh run list -R you/trips.example.com -L 1         # a new Site run (workflow_dispatch)
+```
+
+If Release failed, pin the site by hand: `gh variable set TRIPBOOK_REF -R you/trips.example.com -b v0.1.x && gh workflow run site.yml -R you/trips.example.com`.
+
 ## 14. Optional settings
 
 In the editor's **Settings** (they are saved to the data repo's `config.json`): site title, author, Google Analytics ID (published trips and listing pages only, never drafts or the editor), time presets, default kind, `ai_crawlers` (`disallow` also stops `llms.txt` and `llms-full.txt` from being written). Press **Rebuild site** to apply them.
@@ -166,6 +178,10 @@ Make the data repo's workflow check tripbook out with a token: create a fine-gra
 | Site workflow fails: `Repository not found` | tripbook is private, or `TRIPBOOK_REPO` is wrong. Make tripbook public (step 2). |
 | Site workflow fails fetching `v0.1.x` | The tag exists only on your machine. Push it: `git push origin v0.1.x`. |
 | A change does not show on the site | The site is pinned to an older release. Check `gh variable list -R you/trips.example.com`. Set up step 13, or run `scripts/release.sh <version>`. |
+| Release workflow fails at "Point the data repo at the release", `HTTP 403 ... actions/variables` | `DATA_REPO_TOKEN` lacks *Variables: Read and write* (or *Actions: Read and write*), or its repository access does not include the data repo. Fix the token, re-run `scripts/setup-auto-release.sh` if its value changed, then push a new site-code commit (step 13). Meanwhile pin the site by hand (see step 13). |
+| Release workflow fails: `expected the "[HOST/]OWNER/REPO" format` | The `DATA_REPO` variable on tripbook has no owner. The workflow now adds the owner of the tripbook repo; set it as `owner/name` if the data repo belongs to someone else. |
+| Release is skipped | `HEAD` already has a `v*` tag. Push a new commit that touches site code. |
+| A trip edit is not on the page | The page is cached for 10 minutes (`max-age=600`). Hard-refresh or add `?x=1` to the URL. |
 | `release.sh` says "Data repo not found" | `DATA_REPO` in `.env` is wrong. It is `owner/name` (the owner may be left out). |
 | Map shows a placeholder | The Maps key is empty, or its referrer restriction does not include the site. Check `config.json` and the key. |
 | 401 or 403 from GitHub in the editor | The token expired or lacks Contents read/write on the data repo. |
