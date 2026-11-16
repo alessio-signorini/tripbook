@@ -27,7 +27,7 @@ function stopRow(entry, section, nextEntry) {
     : '';
   const note = stop.note && stop.note.trim() ? `<div class="stop-note md">${renderMarkdown(stop.note)}</div>` : '';
   const row =
-    `<li ${attrs}><span class="badge-num${entry.offRoute ? ' off' : ''}">${entry.offRoute ? '•' : esc(label)}</span>` +
+    `<li ${attrs}><span class="badge-num${entry.offRoute ? ' off' : ''}">${esc(label)}</span>` +
     `<div class="stop-main"><div class="stop-head"><h3 class="stop-name">${esc(stop.name)}</h3>${time}</div>` +
     (rating || stop.address ? `<div class="stop-where">${rating}${stop.address ? `<span class="addr"><span class="addr-full">${esc(stop.address)}</span><span class="addr-short">${esc(shortAddress(stop))}</span></span>` : ''}</div>` : '') +
     note +

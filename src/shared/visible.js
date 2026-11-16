@@ -3,21 +3,24 @@ import { sectionLetter, totalMinutes } from './format.js';
 
 /**
  * Sections with their stops and number labels.
- * Every stop is returned with `visible`, `offRoute` and `label`; hidden and off-route stops get label ''.
+ * Every stop is returned with `visible`, `offRoute` and `label`; hidden stops get label ''.
  * A stop is off the route when it is flagged `off_route` inside a `route` section: it stays in the
- * list and on the map but takes no number and is left out of the path, legs and route links.
+ * list and on the map, is left out of the path, legs and route links, and is labelled with a letter
+ * (A, B, C... across the whole trip) instead of a number.
  * Returns [{ section, letter, stops: [{ stop, visible, offRoute, label, number }], visibleStops, routeStops, minutes }]
  * `showLow` defaults to the trip kind: guides hide low-rated stops, logs show them.
  */
 export function visibleStops(trip, { showLow = trip.kind === 'log' } = {}) {
   const multi = trip.sections.length > 1;
+  let offCount = 0;
   return trip.sections.map((section, si) => {
     const letter = sectionLetter(si);
     let n = 0;
     const stops = section.stops.map((stop) => {
       const visible = showLow || !isLow(stop);
       const offRoute = section.style === 'route' && stop.off_route === true;
-      if (!visible || offRoute) return { stop, visible, offRoute, number: 0, label: '' };
+      if (!visible) return { stop, visible, offRoute, number: 0, label: '' };
+      if (offRoute) return { stop, visible, offRoute, number: 0, label: sectionLetter(offCount++) };
       n += 1;
       return { stop, visible, offRoute, number: n, label: multi ? `${letter}${n}` : String(n) };
     });

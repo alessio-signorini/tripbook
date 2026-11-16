@@ -110,7 +110,8 @@ test('off-route stop: bullet badge, no number, no leg around it, excluded from r
   t.sections[0].stops[2].off_route = true; // Corso Italia, 43.7135,10.4005
   const html = page(t);
   assert.match(html, /<li class="stop off-route" data-stop="p-3"/);
-  assert.match(html, /<span class="badge-num off">•<\/span>/);
+  assert.match(html, /<span class="badge-num off">A<\/span>/);
+  assert.match(html, /<span class="badge-num off">B<\/span>/);
   assert.deepEqual([...html.matchAll(/<span class="badge-num">(\d+)<\/span>/g)].map((m) => m[1]), ['1', '2', '3', '4', '5', '6']);
   assert.match(html, /<li class="leg" data-after="p-2" hidden/);
   assert.match(html, /<li class="leg" data-after="p-3" hidden/);

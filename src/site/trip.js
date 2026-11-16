@@ -5,6 +5,7 @@ import { loadMaps } from '../shared/maps-loader.js';
 
 const ACCENT = '#C2410C';
 const INK = '#1A1D21';
+const MUTED = '#5F6368';
 const data = JSON.parse(document.getElementById('trip-data').textContent);
 const body = document.body;
 const $ = (sel, root = document) => root.querySelector(sel);
@@ -74,9 +75,9 @@ function update() {
     sec.stops.forEach((entry, i) => {
       const row = rows.get(entry.stop.id);
       row.hidden = !entry.visible;
-      const label = state.tab === 'all' && multi ? entry.label : String(entry.number || '');
+      const label = entry.label;
       row.dataset.label = label;
-      $('.badge-num', row).textContent = entry.offRoute ? '•' : label;
+      $('.badge-num', row).textContent = label;
       const leg = legs.get(entry.stop.id);
       const next = sec.stops[i + 1];
       if (leg) leg.hidden = !(entry.visible && next?.visible && !entry.offRoute && !next.offRoute);
@@ -239,12 +240,12 @@ async function initMap() {
   let lines = [];
   let current = [];
 
-  const pin = (label, selected) =>
+  const pin = (label, selected, off) =>
     new PinElement({
-      background: selected ? INK : ACCENT,
-      borderColor: '#FFFFFF',
+      background: selected ? INK : off ? '#FFFFFF' : ACCENT,
+      borderColor: selected ? '#FFFFFF' : off ? MUTED : '#FFFFFF',
       glyph: label,
-      glyphColor: '#FFFFFF',
+      glyphColor: selected ? '#FFFFFF' : off ? MUTED : '#FFFFFF',
       scale: selected ? 1.3 : 1,
     });
 
@@ -259,11 +260,11 @@ async function initMap() {
         const path = [];
         sec.stops.forEach((entry) => {
           if (!entry.visible) return;
-          const label = entry.offRoute ? '•' : rows.get(entry.stop.id).dataset.label;
+          const label = rows.get(entry.stop.id).dataset.label;
           const m = new AdvancedMarkerElement({
             map,
             position: { lat: entry.stop.lat, lng: entry.stop.lng },
-            content: pin(label, entry.stop.id === state.selected).element,
+            content: pin(label, entry.stop.id === state.selected, entry.offRoute).element,
             title: entry.stop.name,
           });
           m.addListener('click', () => {
@@ -271,6 +272,7 @@ async function initMap() {
             if (mobile.matches && sheet.snap === 0) sheet.setSnap(1);
           });
           m._label = label;
+          m._off = entry.offRoute;
           markers.set(entry.stop.id, m);
           if (!entry.offRoute) path.push({ lat: entry.stop.lat, lng: entry.stop.lng });
           current.push({ lat: entry.stop.lat, lng: entry.stop.lng });
@@ -299,14 +301,14 @@ async function initMap() {
     },
     highlight(id) {
       markers.forEach((m, sid) => {
-        m.content = pin(m._label, sid === id).element;
+        m.content = pin(m._label, sid === id, m._off).element;
         m.zIndex = sid === id ? 10 : 0;
       });
     },
     hover(id, on) {
       const m = markers.get(id);
       if (!m || id === state.selected) return;
-      m.content = pin(m._label, on).element;
+      m.content = pin(m._label, on, m._off).element;
     },
   };
   mapView = api;

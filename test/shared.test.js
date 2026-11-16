@@ -230,11 +230,13 @@ test('off_route: no number, kept out of routeStops, ignored in list sections', (
   t.sections[0].stops.forEach((p) => delete p.off_route);
   t.sections[0].stops[2].off_route = true; // Corso Italia
   const [s] = visibleStops(t);
-  assert.deepEqual(s.stops.map((x) => x.label), ['1', '2', '', '3', '4', '5', '6', '7']);
+  assert.deepEqual(s.stops.map((x) => x.label), ['1', '2', 'A', '3', '4', '5', '6', '7']);
   assert.equal(s.stops[2].offRoute, true);
   assert.equal(s.count, 8);
   assert.equal(s.routeStops.length, 7);
   assert.ok(!s.routeStops.some((p) => p.name === 'Corso Italia'));
+  t.sections[0].stops[5].off_route = true; // Pasticceria Salza
+  assert.deepEqual(visibleStops(t)[0].stops.filter((x) => x.offRoute).map((x) => x.label), ['A', 'B']);
   t.sections[0].style = 'list';
   const [l] = visibleStops(t);
   assert.deepEqual(l.stops.map((x) => x.label), ['1', '2', '3', '4', '5', '6', '7', '8']);
