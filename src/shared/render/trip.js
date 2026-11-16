@@ -120,15 +120,15 @@ ${mapsIcon}
 <button type="button" class="m-locate" id="locate" aria-label="Show my location">${icons.locate}</button>`;
 }
 
-/** Switches above the list: low-rated places (when any) and off-the-path places (when any). */
-function toggles({ lowCount, offCount, defaultShowLow }) {
+/** Switches above the list, on one line: low-rated places (when any) and off-the-path places (when some, but not all, stops are off-route). */
+function toggles({ lowCount, offCount, totalCount, defaultShowLow }) {
   const low = lowCount
     ? `<div class="low-toggle"><input type="checkbox" role="switch" id="low-toggle"${defaultShowLow ? ' checked' : ''}><label for="low-toggle">Show low-rated places (${lowCount})</label></div>`
     : '';
-  const off = offCount
+  const off = offCount && offCount < totalCount
     ? `<div class="low-toggle"><input type="checkbox" role="switch" id="off-toggle" checked><label for="off-toggle">Show places off the path (${offCount})</label></div>`
     : '';
-  return low + off;
+  return low || off ? `<div class="toggles">${low}${off}</div>` : '';
 }
 
 /**
@@ -158,7 +158,7 @@ ${mobileChrome({ trip, config, total, mapsUrl })}
 <div class="list-col" id="sheet">
 <div class="sheet-top"><button type="button" class="sheet-handle" id="sheet-handle" aria-label="Resize list"><span></span></button></div>
 <div class="sheet-scroll" id="sheet-scroll">
-${toggles({ lowCount, offCount, defaultShowLow })}
+${toggles({ lowCount, offCount, totalCount: trip.sections.reduce((n, s) => n + s.stops.length, 0), defaultShowLow })}
 ${noteHtml ? `<div class="m-note md clamp" data-m-note>${noteHtml}</div>` : ''}
 <div class="sections">${sections.map((s) => sectionBlock(s, multi)).join('')}</div>
 </div>

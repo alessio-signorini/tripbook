@@ -493,6 +493,12 @@ a {
 }
 
 /* ---------- trip page: list toggles (toggles) ---------- */
+.toggles {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+}
 .low-toggle {
   display: flex;
   align-items: center;
