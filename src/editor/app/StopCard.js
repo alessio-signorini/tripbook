@@ -50,34 +50,50 @@ function StopForm({ trip, stop }) {
     );
   }
 
-  return html`<div class="stop-form">
+  const [details, setDetails] = useState(false);
+  const isRoute = findStop(trip, stop.id)?.section.style === 'route';
+  const place = [stop.address, stop.city].filter(Boolean)[0] || 'not set';
+
+  return html`<div class="stop-form compact">
     <${Field} label="Name"><input type="text" value=${stop.name} onInput=${(e) => set({ name: e.target.value })} /><//>
-    <div class="field"><span>Rating</span><${StarInput} value=${stop.rating} onChange=${(rating) => set({ rating })} /></div>
-    <${Field} label="Address"><input type="text" value=${stop.address} onInput=${(e) => set({ address: e.target.value })} /><//>
-    <div class="grid2">
-      <${Field} label="City"><input type="text" value=${stop.city} onInput=${(e) => set({ city: e.target.value })} /><//>
-      <${Field} label="Region"><input type="text" value=${stop.region} onInput=${(e) => set({ region: e.target.value })} /><//>
-      <${Field} label="Country"><input type="text" value=${stop.country} onInput=${(e) => set({ country: e.target.value })} /><//>
-      <${Field} label="Country code"><input type="text" maxlength="2" value=${stop.country_code} onInput=${(e) => set({ country_code: e.target.value.toUpperCase() })} /><//>
+    <${Field} label="Note (Markdown)"><${AutoTextarea} minRows=${2} value=${stop.note} onInput=${(note) => set({ note })} /><//>
+
+    <div class="rt-row">
+      <div class="field"><span>Rating</span><${StarInput} value=${stop.rating} onChange=${(rating) => set({ rating })} /></div>
+      <div class="field"><span>Time at this stop</span>
+        <div class="time-row">
+          <${Chips} options=${presets} value=${stop.minutes} onChange=${(minutes) => set({ minutes })} format=${formatMinutes} />
+          <input class="min-input" type="number" inputmode="numeric" min="5" step="5" placeholder="min" aria-label="Custom minutes" value=${stop.minutes ?? ''}
+            onChange=${(e) => { const v = parseInt(e.target.value, 10); set({ minutes: v > 0 ? v : null }); }} />
+          ${stop.minutes >= 60 && html`<span class="hint">${formatMinutes(stop.minutes)}</span>`}
+        </div>
+      </div>
     </div>
-    <div class="coords-row">
-      <${Field} label="Latitude"><input type="number" step="any" value=${stop.lat} onChange=${num('lat')} /><//>
-      <${Field} label="Longitude"><input type="number" step="any" value=${stop.lng} onChange=${num('lng')} /><//>
-    </div>
-    <div class="row">
-      <button type="button" class="btn btn-small" onClick=${useMyLocation}>Use my location</button>
-      <button type="button" class="btn btn-small" onClick=${() => showModal(() => html`<${MapPicker} lat=${stop.lat} lng=${stop.lng} onPick=${(p) => set({ ...p, coords_source: 'pin' })} />`, { title: 'Choose location' })}>Pick on map</button>
-    </div>
-    <div class="field"><span>Time at this stop (minutes)</span>
-      <${Chips} options=${presets} value=${stop.minutes} onChange=${(minutes) => set({ minutes })} format=${formatMinutes} />
-      <input type="number" min="1" step="1" placeholder="Custom" value=${stop.minutes ?? ''} onChange=${(e) => { const v = parseInt(e.target.value, 10); set({ minutes: v > 0 ? v : null }); }} style="margin-top:8px" />
-    </div>
-    ${findStop(trip, stop.id)?.section.style === 'route' && html`<label class="check"><input type="checkbox" checked=${stop.off_route === true} onChange=${(e) => set({ off_route: e.target.checked ? true : undefined })} /> <span>Recommended, but not on the route</span></label>`}
+    ${isRoute && html`<label class="check"><input type="checkbox" checked=${stop.off_route === true} onChange=${(e) => set({ off_route: e.target.checked ? true : undefined })} /> <span>Recommended, but not on the route</span></label>`}
+
+    <button type="button" class="details-toggle" aria-expanded=${details} onClick=${() => setDetails(!details)}>
+      <span>${details ? '▾' : '▸'} Address and location</span><span class="hint">${details ? '' : place}</span>
+    </button>
+    ${details && html`<div class="details">
+      <${Field} label="Address"><input type="text" value=${stop.address} onInput=${(e) => set({ address: e.target.value })} /><//>
+      <div class="grid2">
+        <${Field} label="City"><input type="text" autocomplete="off" value=${stop.city} onInput=${(e) => set({ city: e.target.value })} /><//>
+        <${Field} label="Region"><input type="text" autocomplete="off" value=${stop.region} onInput=${(e) => set({ region: e.target.value })} /><//>
+        <${Field} label="Country"><input type="text" autocomplete="off" value=${stop.country} onInput=${(e) => set({ country: e.target.value })} /><//>
+        <${Field} label="Country code"><input type="text" autocomplete="off" maxlength="2" value=${stop.country_code} onInput=${(e) => set({ country_code: e.target.value.toUpperCase() })} /><//>
+        <${Field} label="Latitude"><input type="number" step="any" value=${stop.lat} onChange=${num('lat')} /><//>
+        <${Field} label="Longitude"><input type="number" step="any" value=${stop.lng} onChange=${num('lng')} /><//>
+      </div>
+      <div class="row">
+        <button type="button" class="btn btn-small" onClick=${useMyLocation}>Use my location</button>
+        <button type="button" class="btn btn-small" onClick=${() => showModal(() => html`<${MapPicker} lat=${stop.lat} lng=${stop.lng} onPick=${(p) => set({ ...p, coords_source: 'pin' })} />`, { title: 'Choose location' })}>Pick on map</button>
+      </div>
+      <div class="field"><span>Google place</span>
+        <div class="row"><code>${stop.place_id || 'none'}</code>${stop.place_id && html`<button type="button" class="link-btn" onClick=${() => set({ place_id: null })}>Clear</button>`}</div>
+      </div>
+    </div>`}
+
     <${Field} label="Leg to next stop"><input type="text" placeholder="3 min walk" value=${stop.leg_to_next ?? ''} onInput=${(e) => set({ leg_to_next: e.target.value || null })} /><//>
-    <${Field} label="Note (Markdown)"><${AutoTextarea} value=${stop.note} onInput=${(note) => set({ note })} /><//>
-    <div class="field"><span>Google place</span>
-      <div class="row"><code>${stop.place_id || 'none'}</code>${stop.place_id && html`<button type="button" class="link-btn" onClick=${() => set({ place_id: null })}>Clear</button>`}</div>
-    </div>
   </div>`;
 }
 

@@ -7,7 +7,7 @@ export const DEFAULT_CONFIG = {
   google_maps_api_key: '',
   google_maps_map_id: 'DEMO_MAP_ID',
   google_analytics_id: '',
-  time_presets: [15, 30, 40, 60, 90],
+  time_presets: [10, 30, 45, 60],
   nearby_radius_m: 75,
   nearby_max_results: 10,
   default_kind: 'log',

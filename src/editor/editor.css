@@ -145,3 +145,16 @@ button, input, select, textarea { font: inherit; color: inherit; }
 @media (max-width: 520px) {
   .grid3 { grid-template-columns: 1fr 1fr; }
 }
+
+/* ---------- compact stop form ---------- */
+.stop-form.compact .field { margin: 8px 0; }
+.rt-row { display: grid; grid-template-columns: auto 1fr; gap: 4px 20px; align-items: start; }
+.rt-row .star-input button { width: 34px; height: 40px; }
+.rt-row .star-input svg { width: 26px; height: 26px; }
+.time-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.time-row .chip { min-height: 40px; padding: 0 12px; }
+.field .min-input { width: 72px; min-height: 40px; padding: 4px 8px; border: 1px solid #c9ccc6; border-radius: 10px; }
+.details-toggle { display: flex; width: 100%; justify-content: space-between; align-items: center; gap: 12px; min-height: 44px; padding: 0 4px; margin: 4px 0; background: none; border: 0; border-top: 1px solid var(--border); cursor: pointer; font-weight: 600; text-align: left; }
+.details-toggle .hint { font-weight: 400; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.details { padding-bottom: 6px; }
+@media (max-width: 520px) { .rt-row { grid-template-columns: 1fr; } }
