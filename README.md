@@ -1,11 +1,8 @@
-# Tripbook
+# 🗺️ Tripbook
 
-Log the places you visit on a trip, then publish them as a shareable **trip log** or a **city guide**: a map, a numbered route, your notes and ratings, on your own domain.
+PWA to edit and publish your **city guides** or **trip logs** on your own domain via Github Pages.
 
-<p align="center">
-  <img src="docs/images/trip-desktop.jpg" alt="A trip guide on desktop: map on the left, the route and stops on the right" width="720">
-  <img src="docs/images/trip-mobile.jpg" alt="The same guide on a phone: full-screen map with a draggable list" width="190">
-</p>
+![screenshot](docs/images/trip-desktop.jpg)
 
 Tripbook is two small pieces and no backend. An **editor** (an installable web app) saves your trips as JSON files in a private GitHub repo, and **GitHub Actions** turns that repo into a fast static website. GitHub is the database; Google Maps draws the maps.
 
