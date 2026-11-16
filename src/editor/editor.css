@@ -158,3 +158,5 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .details-toggle .hint { font-weight: 400; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .details { padding-bottom: 6px; }
 @media (max-width: 520px) { .rt-row { grid-template-columns: 1fr; } }
+.kind-slug { display: flex; gap: 12px; align-items: flex-end; }
+.kind-slug .grow { flex: 1; min-width: 0; }

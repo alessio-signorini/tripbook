@@ -5,6 +5,7 @@ import {
   setActive, showModal, toast, navigate, saveRecord,
 } from './state.js';
 import { Field, Menu, AutoTextarea } from './fields.js';
+import { countries, countryByName } from './countries.js';
 import { PhotoField } from './PhotoField.js';
 import { SectionsSortable, SectionCard } from './Sections.js';
 import { setTitle, addSection, makeGuide } from '../editing.js';
@@ -49,6 +50,7 @@ async function guideFromLog(rec) {
 export function TripEditor({ id }) {
   const rec = trips.value.get(id);
   const [reorder, setReorder] = useState(false);
+  const [showLoc, setShowLoc] = useState(!trips.value.get(id)?.trip.location?.country);
   if (!rec) return html`<section class="screen"><p>Trip not found. <a href="#/">Back to trips</a></p></section>`;
 
   const trip = rec.trip;
@@ -82,22 +84,26 @@ export function TripEditor({ id }) {
     ${errors && html`<ul class="error-list" role="alert">${errors.map((e) => html`<li>${e}</li>`)}</ul>`}
 
     <${Field} label="Title"><input type="text" value=${trip.title} onInput=${(e) => updateTrip(id, (t) => setTitle(t, e.target.value))} /><//>
-    <div class="field"><span>Kind</span>
-      <div class="segmented" role="group" aria-label="Kind">
-        <button type="button" aria-pressed=${trip.kind === 'guide'} onClick=${() => set({ kind: 'guide' })}>Guide</button>
-        <button type="button" aria-pressed=${trip.kind === 'log'} onClick=${() => set({ kind: 'log' })}>Trip log</button>
+    <div class="kind-slug">
+      <div class="field"><span>Kind</span>
+        <div class="segmented" role="group" aria-label="Kind">
+          <button type="button" aria-pressed=${trip.kind === 'guide'} onClick=${() => set({ kind: 'guide' })}>Guide</button>
+          <button type="button" aria-pressed=${trip.kind === 'log'} onClick=${() => set({ kind: 'log' })}>Trip log</button>
+        </div>
       </div>
+      <${Field} label="Slug" class="grow"><input type="text" value=${trip.slug} autocapitalize="none" onInput=${(e) => set({ slug: e.target.value })} /><//>
     </div>
-    <${Field} label="Slug"><input type="text" value=${trip.slug} autocapitalize="none" onInput=${(e) => set({ slug: e.target.value })} /><//>
-    <div class="grid2">
-      <${Field} label="Country"><input type="text" value=${trip.location.country} onInput=${(e) => setLoc({ country: e.target.value })} /><//>
+    <${Field} label="Trip note"><${AutoTextarea} minRows=${3} placeholder="Markdown: **bold**, *italic*, [links](https://…), lists" value=${trip.note} onInput=${(note) => set({ note })} /><//>
+    <${PhotoField} trip=${trip} onChange=${(photo) => set({ photo })} />
+    <button type="button" class="btn btn-small" aria-expanded=${showLoc} onClick=${() => setShowLoc(!showLoc)}>${showLoc ? 'Hide location' : 'Show location'}</button>
+    ${showLoc && html`<div class="grid2">
+      <${Field} label="Country"><input type="text" list="country-list" value=${trip.location.country} onInput=${(e) => { const c = countryByName(e.target.value); setLoc(c ? { country: c.name, country_code: c.code } : { country: e.target.value }); }} /><//>
+      <datalist id="country-list">${countries().map((c) => html`<option key=${c.code} value=${c.name} />`)}</datalist>
       <${Field} label="Country code"><input type="text" maxlength="2" value=${trip.location.country_code} onInput=${(e) => setLoc({ country_code: e.target.value.toUpperCase() })} /><//>
       <${Field} label="Region (optional)"><input type="text" value=${trip.location.region} onInput=${(e) => setLoc({ region: e.target.value })} /><//>
       <${Field} label="City (optional)"><input type="text" value=${trip.location.city} onInput=${(e) => setLoc({ city: e.target.value })} /><//>
-    </div>
+    </div>`}
     <p class="path-preview">${path}</p>
-    <${PhotoField} trip=${trip} onChange=${(photo) => set({ photo })} />
-    <${Field} label="Trip note"><${AutoTextarea} minRows=${3} placeholder="Markdown: **bold**, *italic*, [links](https://…), lists" value=${trip.note} onInput=${(note) => set({ note })} /><//>
 
     <div class="row space" style="margin-top:20px">
       <h2>Sections</h2>
