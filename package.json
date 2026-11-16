@@ -7,7 +7,8 @@
     "build:editor": "node src/build/build-editor.mjs --out _editor",
     "serve": "sirv _site --port 8080 --dev --host",
     "serve:editor": "sirv _editor --port 8081 --dev --host --single",
-    "icons": "node scripts/make-icons.mjs"
+    "icons": "node scripts/make-icons.mjs",
+    "build:editor:demo": "node src/build/build-editor.mjs --out _editor --demo"
   },
   "license": "MIT",
   "type": "module",

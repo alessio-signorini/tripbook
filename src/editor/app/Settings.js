@@ -76,7 +76,7 @@ export function Settings() {
   return html`<section class="screen">
     <h1>Settings</h1>
     <h2 class="group-title">Data repo</h2>
-    <p>${s.owner}/${s.repo} <span class="hint">(${s.branch || 'default branch'})</span></p>
+    <p>${s.demo ? 'Sample data (no GitHub)' : `${s.owner}/${s.repo}`} <span class="hint">(${s.branch || 'default branch'})</span></p>
     <a class="btn" href="#/setup">Change repo/token</a>
 
     <h2 class="group-title">Site settings (config.json)</h2>

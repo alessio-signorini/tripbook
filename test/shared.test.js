@@ -205,7 +205,7 @@ test('visible: logs show low stops by default; multi-section labels', () => {
 
 test('visible: unrated stops are never hidden', () => {
   const [s] = visibleStops(pisa(), { showLow: false });
-  assert.equal(s.count, 7);
+  assert.equal(s.count, 8);
 });
 
 test('shortAddress drops city, region, country and postal parts', () => {
@@ -227,17 +227,18 @@ test('validateTrip: photo is optional but must use https urls', async () => {
 
 test('off_route: no number, kept out of routeStops, ignored in list sections', () => {
   const t = pisa();
+  t.sections[0].stops.forEach((p) => delete p.off_route);
   t.sections[0].stops[2].off_route = true; // Corso Italia
   const [s] = visibleStops(t);
-  assert.deepEqual(s.stops.map((x) => x.label), ['1', '2', '', '3', '4', '5', '6']);
+  assert.deepEqual(s.stops.map((x) => x.label), ['1', '2', '', '3', '4', '5', '6', '7']);
   assert.equal(s.stops[2].offRoute, true);
-  assert.equal(s.count, 7);
-  assert.equal(s.routeStops.length, 6);
+  assert.equal(s.count, 8);
+  assert.equal(s.routeStops.length, 7);
   assert.ok(!s.routeStops.some((p) => p.name === 'Corso Italia'));
   t.sections[0].style = 'list';
   const [l] = visibleStops(t);
-  assert.deepEqual(l.stops.map((x) => x.label), ['1', '2', '3', '4', '5', '6', '7']);
-  assert.equal(l.routeStops.length, 7);
+  assert.deepEqual(l.stops.map((x) => x.label), ['1', '2', '3', '4', '5', '6', '7', '8']);
+  assert.equal(l.routeStops.length, 8);
 });
 
 test('off_route must be a boolean; openInMaps directions use route stops only', () => {

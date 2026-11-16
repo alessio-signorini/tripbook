@@ -1,7 +1,7 @@
 import { get, set, del, keys } from 'idb-keyval';
 
 const SETTINGS_KEY = 'tripbook.settings';
-const EMPTY = { owner: '', repo: '', branch: '', token: '', active_trip_id: null };
+const EMPTY = { owner: '', repo: '', branch: '', token: '', active_trip_id: null, demo: false };
 
 export function loadSettings() {
   try {

@@ -25,7 +25,7 @@ async function listFiles(dir, prefix = '') {
   return out;
 }
 
-export async function buildEditor({ out, log = console.log }) {
+export async function buildEditor({ out, demo = false, log = console.log }) {
   const pkg = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'));
   await rm(out, { recursive: true, force: true });
   await mkdir(out, { recursive: true });
@@ -45,7 +45,19 @@ export async function buildEditor({ out, log = console.log }) {
   await writeFile(join(out, 'build.json'), JSON.stringify(build, null, 2) + '\n');
   await writeFile(join(out, '404.html'), '<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=/"><script>location.replace("/")</script>\n');
 
-  const files = (await listFiles(out)).filter((f) => f !== 'sw.js' && f !== '404.html' && !f.endsWith('.map')).sort();
+  if (demo) {
+    const data = join(root, 'examples/data');
+    const payload = { config: JSON.parse(await readFile(join(data, 'config.json'), 'utf8')), files: {} };
+    for (const folder of ['drafts', 'published']) {
+      for (const name of (await readdir(join(data, folder))).filter((n) => n.endsWith('.json'))) {
+        payload.files[`${folder}/${name}`] = JSON.parse(await readFile(join(data, folder, name), 'utf8'));
+      }
+    }
+    await mkdir(join(out, 'demo'), { recursive: true });
+    await writeFile(join(out, 'demo/data.json'), JSON.stringify(payload));
+  }
+
+  const files = (await listFiles(out)).filter((f) => f !== 'sw.js' && f !== '404.html' && !f.endsWith('.map') && !f.startsWith('demo/')).sort();
   const shell = ['/', ...files.map((f) => `/${f}`)];
   const version = hash(files.join('\n'));
   const sw = (await readFile(join(src, 'sw.js'), 'utf8')).replace('__CACHE_VERSION__', `tripbook-${version}`).replace('__SHELL__', JSON.stringify(shell, null, 2));
@@ -66,7 +78,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     console.error('Usage: build-editor.mjs --out <dir>');
     process.exit(2);
   }
-  buildEditor({ out: resolve(out) }).catch((e) => {
+  buildEditor({ out: resolve(out), demo: process.argv.includes('--demo') }).catch((e) => {
     console.error(e.message);
     process.exit(1);
   });

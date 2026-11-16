@@ -48,10 +48,13 @@ Requires Node 24 (the devcontainer provides it).
 npm install
 npm test                          # unit and build tests
 npm run build:example && npm run serve          # example site on http://localhost:8080
-npm run build:editor  && npm run serve:editor   # editor on http://localhost:8081
+npm run build:editor:demo && npm run serve:editor   # editor on http://localhost:8081, with sample data
 ```
 
-`examples/data` holds sample trips (two published, one draft). The example Maps key is empty, so maps show a placeholder.
+`examples/data` holds sample trips (two published, one draft, including a place marked as not on the route). The example Maps key is empty, so maps show a placeholder; put a key in `examples/data/config.json` locally to see real maps (don't commit it).
+
+To try the editor without GitHub or a token, build it with `build:editor:demo`, open http://localhost:8081/#/setup and press **Use sample data** (shown only on localhost). Sync, Publish, Unpublish and Delete then work against a fake repo kept in your browser. Use `build:editor` (no demo) for the real thing.
+
 
 ## How content works
 

@@ -166,3 +166,30 @@ test('pullRemote keeps dirty locals, fetches new and changed, removes vanished',
   assert.deepEqual(out.removed, ['gone']);
   assert.equal(out.config.config.site_title, 'X');
 });
+
+/* ---------- demo (fake) client ---------- */
+test('fake github: same contract as the real client (put, get, list, conflict, move, delete)', async () => {
+  const store = {};
+  globalThis.localStorage = { getItem: (k) => store[k] ?? null, setItem: (k, v) => (store[k] = v), removeItem: (k) => delete store[k] };
+  const { createFakeGithub, seedDemo } = await import('../src/editor/demo.js');
+  seedDemo({ config: { site_title: 'X' }, files: { 'drafts/a.json': { title: 'A' } } });
+  const g = createFakeGithub();
+  assert.deepEqual((await g.listFolder('drafts')).map((f) => f.name), ['a.json']);
+  assert.deepEqual(await g.listFolder('published'), []);
+  assert.equal((await g.getFile('config.json')).data.site_title, 'X');
+  assert.equal(await g.getFile('drafts/missing.json'), null);
+
+  const first = await g.getFile('drafts/a.json');
+  const sha2 = await g.putFile('drafts/a.json', { title: 'A2' }, first.sha, 'm');
+  assert.notEqual(sha2, first.sha);
+  await assert.rejects(g.putFile('drafts/a.json', { title: 'A3' }, first.sha, 'm'), ConflictError);
+  assert.equal(await g.putFile('drafts/new.json', { title: 'N' }, null, 'm') !== null, true);
+
+  const moved = await g.moveFile('drafts/a.json', 'published/a.json', { title: 'A2' }, sha2, 'm');
+  assert.equal((await g.getFile('published/a.json')).sha, moved);
+  assert.equal(await g.getFile('drafts/a.json'), null);
+  await assert.rejects(g.deleteFile('published/a.json', 'stale', 'm'), ConflictError);
+  await g.deleteFile('published/a.json', moved, 'm');
+  assert.equal(await g.getFile('published/a.json'), null);
+  delete globalThis.localStorage;
+});

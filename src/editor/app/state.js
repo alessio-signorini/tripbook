@@ -1,6 +1,7 @@
 import { signal, computed } from '@preact/signals';
 import { mergeConfig, newTrip } from '../../shared/schema.js';
 import { createGithub, ConflictError, GithubError } from '../github.js';
+import { createFakeGithub } from '../demo.js';
 import {
   loadSettings, saveSettings, loadAllTrips, saveTripRecord, deleteTripRecord, loadConfigRecord, saveConfigRecord,
 } from '../store.js';
@@ -28,7 +29,7 @@ export function applyUpdate() {
 }
 
 export const isConfigured = () => Boolean(settings.value.owner && settings.value.repo && settings.value.token);
-export const gh = () => createGithub(settings.value);
+export const gh = () => (settings.value.demo ? createFakeGithub() : createGithub(settings.value));
 
 /* ---------- routing ---------- */
 export function parseHash(hash = location.hash) {
@@ -106,7 +107,7 @@ export function setActive(id) {
 }
 
 export function saveConnection({ owner, repo, branch, token }) {
-  settings.value = { ...settings.value, owner, repo, branch, token };
+  settings.value = { ...settings.value, owner, repo, branch, token, demo: false };
   saveSettings(settings.value);
 }
 

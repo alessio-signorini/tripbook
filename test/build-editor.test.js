@@ -55,3 +55,12 @@ test('manifest has start_url "/" and the 404 redirects to /', async () => {
   for (const icon of m.icons) assert.ok(existsSync(join(out, icon.src.slice(1))), icon.src);
   assert.ok(existsSync(join(out, 'icons/apple-touch-icon.png')));
 });
+
+test('--demo adds sample data outside the offline cache; the normal build has none', async () => {
+  assert.ok(!existsSync(join(out, 'demo')));
+  const o = join(tmp, 'out-demo');
+  await buildEditor({ out: o, demo: true, log: () => {} });
+  const data = JSON.parse(await readFile(join(o, 'demo/data.json'), 'utf8'));
+  assert.ok(data.config && data.files['published/pisa-in-one-walk.json'] && data.files['drafts/pisa-4-hours-layover.json']);
+  assert.ok(!(await readFile(join(o, 'sw.js'), 'utf8')).includes('demo/'));
+});

@@ -2,6 +2,8 @@ import { html } from './ui.js';
 import { useState } from 'preact/hooks';
 import { settings, saveConnection, navigate, toast, refresh } from './state.js';
 import { createGithub } from '../github.js';
+import { seedDemo } from '../demo.js';
+import { saveSettings } from '../store.js';
 
 export function Setup() {
   const s = settings.value;
@@ -42,6 +44,23 @@ export function Setup() {
     refresh();
   }
 
+  const local = ['localhost', '127.0.0.1'].includes(location.hostname);
+
+  async function useSamples() {
+    try {
+      const res = await fetch('/demo/data.json');
+      if (!res.ok) throw new Error('Not found. Build with: npm run build:editor:demo');
+      seedDemo(await res.json());
+      settings.value = { ...settings.value, owner: 'demo', repo: 'trips', branch: 'main', token: 'demo', demo: true };
+      saveSettings(settings.value);
+      toast('Using sample data on this device');
+      navigate('#/');
+      refresh();
+    } catch (e) {
+      setResult({ ok: false, message: `Could not load sample data: ${e.message}` });
+    }
+  }
+
   return html`<section class="screen">
     <h1>Connect your data repo</h1>
     <p class="hint">Your trips are stored as JSON files in a private GitHub repo. The token stays on this device and is only sent to api.github.com.</p>
@@ -61,5 +80,8 @@ export function Setup() {
       <button class="btn btn-primary" onClick=${save} disabled=${!result?.ok}>Save</button>
     </div>
     ${result && html`<p class=${result.ok ? 'ok' : 'error'} role="status">${result.message}</p>`}
+    ${local && html`<h2 class="group-title">Local development</h2>
+      <p class="hint">Try the editor with the example trips, no GitHub or token needed. Sync, Publish and Delete work against a fake repo kept in this browser.</p>
+      <button class="btn" onClick=${useSamples}>Use sample data</button>`}
   </section>`;
 }
