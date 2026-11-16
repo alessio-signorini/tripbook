@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { localDate, isoWithOffset, sectionForCapture, addCapturedStop, newCaptureTrip } from '../src/editor/capture.js';
-import { mapPlace, mapGeocode, fromComponents, distanceM } from '../src/editor/places.js';
+import { mapPlace, mapGeocode, fromComponents, distanceM, parseCoordinates } from '../src/editor/places.js';
 import { newTrip, validateTrip, DEFAULT_CONFIG } from '../src/shared/schema.js';
 
 const fields = (name) => ({ name, lat: 34.41, lng: -119.68, place_id: 'abc', coords_source: 'place', city: 'Santa Barbara', country: 'United States', country_code: 'US', region: 'California', type: 'Beach', distance: 12 });
@@ -80,4 +80,14 @@ test('places: component mapping and place/geocode conversion', () => {
   assert.deepEqual([pin.place_id, pin.name, pin.coords_source, pin.city], [null, '1 Main St', 'device', 'Pisa']);
   assert.equal(mapGeocode(undefined, { lat: 1, lng: 2 }).name, 'Dropped pin');
   assert.ok(Math.abs(distanceM({ lat: 0, lng: 0 }, { lat: 0, lng: 0.001 }) - 111) <= 1);
+});
+
+test('parseCoordinates accepts pasted lat/lng and rejects place names', () => {
+  assert.deepEqual(parseCoordinates('43.71107480209192, 10.399405060170876'), { lat: 43.71107480209192, lng: 10.399405060170876 });
+  assert.deepEqual(parseCoordinates('(43.7, -10.4)'), { lat: 43.7, lng: -10.4 });
+  assert.deepEqual(parseCoordinates('43.7 10.4'), { lat: 43.7, lng: 10.4 });
+  assert.equal(parseCoordinates('91, 10'), null);
+  assert.equal(parseCoordinates('Via Santa Maria 12'), null);
+  assert.equal(parseCoordinates('12'), null);
+  assert.equal(mapGeocode(undefined, { lat: 1, lng: 2 }, 'pin').coords_source, 'pin');
 });

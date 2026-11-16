@@ -41,7 +41,16 @@ export function mapPlace(place) {
 }
 
 /** A Geocoder result -> stop fields for a dropped pin. */
-export function mapGeocode(result, pos) {
+/** "43.711, 10.399" (also with parentheses or a semicolon) -> { lat, lng }, else null. */
+export function parseCoordinates(text) {
+  const m = String(text).trim().match(/^\(?\s*(-?\d{1,2}(?:\.\d+)?)\s*[,;\s]\s*(-?\d{1,3}(?:\.\d+)?)\s*\)?$/);
+  if (!m) return null;
+  const lat = parseFloat(m[1]);
+  const lng = parseFloat(m[2]);
+  return lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180 ? { lat, lng } : null;
+}
+
+export function mapGeocode(result, pos, source = 'device') {
   const first = (result?.formatted_address || '').split(',')[0].trim();
   return {
     place_id: null,
@@ -50,7 +59,7 @@ export function mapGeocode(result, pos) {
     ...fromComponents((result?.address_components || []).map((c) => ({ long: c.long_name, short: c.short_name, types: c.types }))),
     lat: +pos.lat.toFixed(6),
     lng: +pos.lng.toFixed(6),
-    coords_source: 'device',
+    coords_source: source,
     type: '',
   };
 }
@@ -96,9 +105,9 @@ export async function textSearch(textQuery, center, config) {
   return withDistance(places.map(mapPlace), center);
 }
 
-export async function reverseGeocode(pos, config) {
+export async function reverseGeocode(pos, config, source = 'device') {
   const importLibrary = loadMaps(config.google_maps_api_key);
   const { Geocoder } = await importLibrary('geocoding');
   const { results } = await new Geocoder().geocode({ location: pos });
-  return mapGeocode(results[0], pos);
+  return mapGeocode(results[0], pos, source);
 }

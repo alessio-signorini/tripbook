@@ -2,7 +2,7 @@ import { html } from './ui.js';
 import { useState, useEffect, useRef } from 'preact/hooks';
 import { trips, config, settings, saveRecord, updateTrip, setActive, doSync, navigate, toast } from './state.js';
 import { StarInput, Chips } from './fields.js';
-import { getPosition, nearby, textSearch, reverseGeocode, LocationError } from '../places.js';
+import { getPosition, nearby, textSearch, reverseGeocode, parseCoordinates, LocationError } from '../places.js';
 import { addCapturedStop, newCaptureTrip } from '../capture.js';
 import { newRecord, stopCount } from '../sync.js';
 import { formatMinutes } from '../../shared/format.js';
@@ -65,6 +65,11 @@ export function Capture({ addTo }) {
     setError(null);
     setLoading('Searching…');
     try {
+      const point = parseCoordinates(query);
+      if (point) {
+        choose([{ ...(await reverseGeocode(point, cfg, 'pin')), distance: 0 }]);
+        return;
+      }
       const found = await textSearch(query.trim(), pos, cfg);
       choose(found);
       if (!found.length) setError({ message: 'No places found.' });
@@ -144,7 +149,7 @@ export function Capture({ addTo }) {
     </div>
 
     ${hasKey && html`<form class="row" onSubmit=${search}>
-      <input ref=${searchRef} class="search" type="search" placeholder="Not listed? Search a place" aria-label="Search a place" value=${query} onInput=${(e) => setQuery(e.target.value)} style="flex:1" />
+      <input ref=${searchRef} class="search" type="search" placeholder="Not listed? Search a place or paste coordinates" aria-label="Search a place" value=${query} onInput=${(e) => setQuery(e.target.value)} style="flex:1" />
       <button class="btn" type="submit">Search</button>
     </form>`}
     <div class="capture-actions">
