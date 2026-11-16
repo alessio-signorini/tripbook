@@ -48,9 +48,13 @@ echo "==> Running tests"
 npm test
 
 echo "==> Tagging v$VERSION"
-npm version "$VERSION" --no-git-tag-version >/dev/null
+npm version "$VERSION" --no-git-tag-version --allow-same-version >/dev/null
 git add package.json package-lock.json
-git commit -m "Release v$VERSION"
+if git diff --cached --quiet; then
+  echo "    package.json already at $VERSION; tagging the current commit"
+else
+  git commit -m "Release v$VERSION"
+fi
 git tag "v$VERSION"
 git push origin main --follow-tags
 
