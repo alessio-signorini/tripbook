@@ -43,10 +43,10 @@ export function PhotoField({ trip, onChange }) {
           <div class="photo-side">
             <small dangerouslySetInnerHTML=${{ __html: photoCredit(photo) }}></small>
             ${input}
-            <div class="row" style="gap:8px">${search('Replace')}<button type="button" class="btn btn-small" onClick=${() => onChange(null)}>Remove</button></div>
+            <div class="row tight">${search('Replace')}<button type="button" class="btn btn-small" onClick=${() => onChange(null)}>Remove</button></div>
           </div>
         </div>`
-      : html`<div class="row nowrap" style="gap:8px">${input}${search('Find photo')}</div>`)}
-    ${open && state.error && html`<small role="alert" class="danger">${state.error}</small>`}
+      : html`<div class="row nowrap tight">${input}${search('Find photo')}</div>`)}
+    ${open && state.error && html`<small role="alert" class="error">${state.error}</small>`}
   </div>`;
 }

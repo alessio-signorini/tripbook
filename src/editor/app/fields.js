@@ -20,7 +20,7 @@ export function StarInput({ value, onChange }) {
   return html`<div class="star-input" role="group" aria-label="Rating">
     ${[1, 2, 3, 4, 5].map(
       (i) => html`<button type="button" key=${i} aria-label=${`${i} ${i === 1 ? 'star' : 'stars'}`} aria-pressed=${value === i} onClick=${() => onChange(value === i ? null : i)}>
-        <svg viewBox="0 0 16 16" aria-hidden="true"><path d=${STAR} fill=${value && i <= value ? '#C2410C' : '#D3D6D0'} /></svg>
+        <svg class=${value && i <= value ? 'on' : ''} viewBox="0 0 16 16" aria-hidden="true"><path d=${STAR} /></svg>
       </button>`,
     )}
   </div>`;

@@ -106,7 +106,7 @@ export function TripEditor({ id }) {
       <${Field} label="City (optional)"><input type="text" value=${trip.location.city} onInput=${(e) => setLoc({ city: e.target.value })} /><//>
     </div>`}
 
-    <div class="row space" style="margin-top:20px">
+    <div class="row space section-title-row">
       <h2>Sections</h2>
       <button type="button" class="btn btn-small" aria-pressed=${reorder} onClick=${() => setReorder(!reorder)}>${reorder ? 'Done reordering' : 'Reorder mode'}</button>
     </div>

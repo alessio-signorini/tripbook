@@ -1,0 +1,29 @@
+/*
+ * Design tokens shared by the public site (src/site/site.css) and the editor (src/editor/editor.css).
+ * Both stylesheets @import this file; esbuild inlines it. JS that needs a color (map pins, star
+ * input) reads src/shared/theme.js, which must match the values here.
+ */
+:root {
+  --ink: #1a1d21;
+  --text: #2f3337;
+  --muted: #5f6368;
+  --border: #e4e6e1;
+  --input-border: #c9ccc6;
+  --track: #d3d6d0;
+  --surface: #f1f2ef;
+  --surface-alt: #fafaf8;
+  --page: #fff;
+  --accent: #c2410c;
+  --accent-text: #9a3412;
+  --tint: #fbefe9;
+  --dot: #1a73e8;
+  --danger: #b91c1c;
+  --ok: #166534;
+  --ok-bg: #dcfce7;
+  --publish: #1a7f37;
+  --warn-bg: #fde68a;
+  --warn-text: #78350f;
+  --radius: 12px;
+  --font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-head: "Space Grotesk", "Inter", system-ui, sans-serif;
+}

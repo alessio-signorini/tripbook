@@ -26,7 +26,7 @@ export function openMoveTo(trip, stopId) {
         (s, i) => html`<li class="trip-row" key=${s.id}>
           <span class="trip-link"><span class="trip-title">${String.fromCharCode(65 + i)}${s.title ? ` · ${s.title}` : ''}</span></span>
           <button class="btn btn-small" onClick=${() => act(s.id, 0)}>Top</button>
-          <button class="btn btn-small" style="margin-left:8px" onClick=${() => act(s.id, Infinity)}>Bottom</button>
+          <button class="btn btn-small" onClick=${() => act(s.id, Infinity)}>Bottom</button>
         </li>`,
       )}</ul>`,
     { title: 'Move to…' },

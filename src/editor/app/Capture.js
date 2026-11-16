@@ -148,8 +148,8 @@ export function Capture({ addTo }) {
       )}
     </div>
 
-    ${hasKey && html`<form class="row" onSubmit=${search}>
-      <input ref=${searchRef} class="search" type="search" placeholder="Not listed? Search a place or paste coordinates" aria-label="Search a place" value=${query} onInput=${(e) => setQuery(e.target.value)} style="flex:1" />
+    ${hasKey && html`<form class="row capture-search" onSubmit=${search}>
+      <input ref=${searchRef} class="search" type="search" placeholder="Not listed? Search a place or paste coordinates" aria-label="Search a place" value=${query} onInput=${(e) => setQuery(e.target.value)} />
       <button class="btn" type="submit">Search</button>
     </form>`}
     <div class="capture-actions">

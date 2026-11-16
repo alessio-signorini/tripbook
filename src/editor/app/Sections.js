@@ -102,7 +102,7 @@ export function SectionCard({ trip, entry, index, reorder }) {
       <//>
     </div>
     ${!collapsed && html`<div class="section-note">
-      <${AutoTextarea} minRows=${1} placeholder="Section note (Markdown)" aria-label="Section note" value=${section.note} onInput=${(note) => set({ note })} onFocus=${() => setNoteFocus(true)} onBlur=${() => setNoteFocus(false)} style=${noteFocus || !section.note ? '' : 'max-height:2.6em;overflow:hidden'} />
+      <${AutoTextarea} minRows=${1} placeholder="Section note (Markdown)" aria-label="Section note" value=${section.note} onInput=${(note) => set({ note })} onFocus=${() => setNoteFocus(true)} onBlur=${() => setNoteFocus(false)} class=${noteFocus || !section.note ? '' : 'folded'} />
     </div>
     <${StopsSortable} tripId=${trip.id} sectionId=${section.id}>
       ${entry.stops.map((e) => html`<${StopCard} key=${e.stop.id} trip=${trip} stop=${e.stop} label=${e.label} reorder=${reorder} />`)}
