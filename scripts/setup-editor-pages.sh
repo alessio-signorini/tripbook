@@ -2,13 +2,17 @@
 # Enable GitHub Pages (from Actions) for the tripbook repo and set the editor's custom domain.
 set -euo pipefail
 
+. "$(dirname "$0")/lib.sh"
+load_env
+
 usage() {
   cat <<'EOF'
 Usage: scripts/setup-editor-pages.sh --domain <host> [--repo <owner/name>]
 
 Run once in the tripbook repo after pushing it to GitHub.
 
-  --domain <host>     Custom domain for the editor, e.g. edit.trips.example.com (required)
+  --domain <host>     Custom domain for the editor, e.g. edit.trips.example.com
+                      (default: EDITOR_DOMAIN from .env; required one way or the other)
   --repo <owner/name> Repo to configure (default: the current repo, via gh)
   -h, --help          Show this help
 
@@ -17,7 +21,7 @@ EOF
 }
 
 REPO=""
-DOMAIN=""
+DOMAIN="${EDITOR_DOMAIN:-}"
 while [ $# -gt 0 ]; do
   case "$1" in
     --repo) REPO="${2:?--repo needs a value}"; shift 2 ;;
@@ -27,7 +31,7 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-[ -n "$DOMAIN" ] || { echo "--domain is required" >&2; usage >&2; exit 2; }
+[ -n "$DOMAIN" ] || { echo "--domain is required (or set EDITOR_DOMAIN in .env)" >&2; usage >&2; exit 2; }
 
 echo "==> Checking GitHub CLI login"
 gh auth status >/dev/null

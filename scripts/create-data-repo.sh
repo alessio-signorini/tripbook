@@ -2,15 +2,19 @@
 # Create the private data repo from templates/data-repo and wire it to a tripbook release.
 set -euo pipefail
 
+. "$(dirname "$0")/lib.sh"
+load_env
+
 usage() {
   cat <<'EOF'
 Usage: scripts/create-data-repo.sh --domain <host> [options]
 
 Run once, after scripts/release.sh has published the first release.
 
-  --domain <host>       Domain of the trips site, e.g. trips.example.com (required)
-  --owner <login>       GitHub owner (default: your gh user)
-  --repo <name>         Repo name (default: trips)
+  --domain <host>       Domain of the trips site, e.g. trips.example.com
+                        (default: SITE_DOMAIN from .env; required one way or the other)
+  --owner <login>       GitHub owner (default: owner part of DATA_REPO in .env, else your gh user)
+  --repo <name>         Repo name (default: name part of DATA_REPO in .env, else trips)
   --code-repo <o/name>  The tripbook repo (default: the current repo, via gh)
   --code-ref <tag>      tripbook release to build with (default: latest v* tag)
   --maps-key <key>      Google Maps browser key, written to config.json
@@ -22,7 +26,9 @@ Never overwrites an existing repo.
 EOF
 }
 
-OWNER=""; REPO="trips"; DOMAIN=""; CODE_REPO=""; CODE_REF=""; MAPS_KEY=""; MAP_ID=""; AUTHOR=""
+OWNER="${DATA_REPO:-}"; OWNER="${OWNER%%/*}"; REPO="${DATA_REPO:-}"; REPO="${REPO#*/}"; DOMAIN="${SITE_DOMAIN:-}"; CODE_REPO=""; CODE_REF=""
+MAPS_KEY="${MAPS_KEY:-}"; MAP_ID="${MAP_ID:-}"; AUTHOR="${AUTHOR:-}"
+[ -n "${DATA_REPO:-}" ] || { OWNER=""; REPO="trips"; }
 while [ $# -gt 0 ]; do
   case "$1" in
     --owner) OWNER="${2:?}"; shift 2 ;;
@@ -38,7 +44,7 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-[ -n "$DOMAIN" ] || { echo "--domain is required" >&2; usage >&2; exit 2; }
+[ -n "$DOMAIN" ] || { echo "--domain is required (or set SITE_DOMAIN in .env)" >&2; usage >&2; exit 2; }
 
 echo "==> Checking GitHub CLI login and scopes"
 gh auth status >/dev/null

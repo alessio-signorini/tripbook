@@ -2,6 +2,9 @@
 # Tag a tripbook release and point the data repo's site build at it.
 set -euo pipefail
 
+. "$(dirname "$0")/lib.sh"
+load_env
+
 usage() {
   cat <<'EOF'
 Usage: scripts/release.sh <version> [--data-repo <owner/name>]
@@ -10,7 +13,7 @@ Tags a release (for example 0.2.0), pushes it, then sets TRIPBOOK_REF on the dat
 repo and triggers a site rebuild.
 
   <version>               Version without the leading v, e.g. 0.2.0
-  --data-repo <o/name>    Data repo (default: <your gh user>/trips)
+  --data-repo <o/name>    Data repo (default: DATA_REPO from .env, else <your gh user>/trips)
   -h, --help              Show this help
 
 Requires a clean working tree on main, up to date with origin/main.
@@ -18,7 +21,7 @@ EOF
 }
 
 VERSION=""
-DATA_REPO=""
+DATA_REPO="${DATA_REPO:-}"
 while [ $# -gt 0 ]; do
   case "$1" in
     --data-repo) DATA_REPO="${2:?--data-repo needs a value}"; shift 2 ;;
