@@ -110,10 +110,11 @@ Dependencies (exact list):
 ```
 .devcontainer/devcontainer.json
 .github/workflows/editor.yml   test, build, deploy the editor (§9.1)
-BUILD.md                       (this file; keep)
+AGENTS.md                      short guide for AI agents working on the project (commands, layout, rules)
 README.md                      short public intro with screenshots (§13 Phase 7)
 LICENSE                        (MIT)
 .env.example                   keys read by scripts/ (§10)
+docs/BUILD.md                  this file; keep it in sync with behavior
 docs/DEPLOY.md                 step-by-step setup guide
 docs/DEVELOPMENT.md            local development, tests, layout, releases
 docs/DATA-MODEL.md             trip/config JSON, URLs, privacy
@@ -151,7 +152,7 @@ src/
   editor/
     index.html
     main.js               app entry (Preact)
-    app/                  Preact screens: App, Setup, Trips, TripEditor, Sections, StopCard, Capture, MapPicker, PhotoField, Settings, Conflict, fields, ui, state
+    app/                  Preact screens: App, Setup, Trips, TripEditor, Sections, StopCard, Capture, MapPicker, PhotoField, Settings, Conflict, fields, ui, state, countries
     github.js             GitHub REST client
     sync.js               sync, publish, unpublish, delete, conflict resolution, pull
     store.js              IndexedDB + localStorage persistence
@@ -472,7 +473,7 @@ Both functions return inline SVG markup and are used by the site and the editor.
 
 - `localStorage["tripbook.settings"]`: `{ owner, repo, branch, token, active_trip_id, demo }`.
 - IndexedDB (idb-keyval):
-  - `trip:<id>` → `{ trip, folder: "drafts"|"published"|null, sha: string|null, dirty: boolean, path_at_sync: string|null }`. `folder: null` means never synced.
+  - `trip:<id>` → `{ trip, folder: "drafts"|"published"|null, sha: string|null, dirty: boolean, path_at_sync: string|null, synced_at: ISO string|null, auto_sync }`. `folder: null` means never synced.
   - `config` → `{ config, sha }` (the data repo's `config.json`, cached for offline use).
 - Never send the token anywhere except `https://api.github.com`.
 
@@ -496,7 +497,7 @@ Plain `fetch` with headers `Authorization: Bearer <token>`, `Accept: application
 - **Sync**: if `folder` is null → create in `drafts/`. Else `putFile` to `<folder>/<id>.json` with the stored sha. Before sync: run `validateTrip`. Block and show errors inline if invalid. For published trips, apply the `old_paths` rule (§5.3) before writing. New trips are written with `v: SCHEMA_VERSION`.
 - **Publish** (draft): run Sync first if dirty, then `moveFile(drafts → published)`. **Unpublish**: the reverse.
 - **Conflict** (`ConflictError`): modal with *Load theirs* (fetch remote, replace local, `dirty: false`) and *Overwrite* (fetch remote sha, `putFile` with it). Show both titles and remote/local stop counts to help choose.
-- **Offline / failure**: keep `dirty: true`. Show a "Not synced" badge on the trip and in the header. Retry automatically on `online` and on `visibilitychange` to visible, for the active trip only, and only if the user has pressed Sync at least once for that trip (no surprise commits).
+- **Offline / failure**: keep `dirty: true`. Show a "Not synced" badge on the trip and in the header; when synced, the editor bar shows `Synced <date and time>` from `synced_at` (editor-only; never rendered on the site). Retry automatically on `online` and on `visibilitychange` to visible, for the active trip only, and only if the user has pressed Sync at least once for that trip (no surprise commits).
 - **Opening the trips list** fetches both folders and `config.json`. For each remote file: if no local record, store it (`dirty: false`). If the local record is `dirty`, keep local and show "Local changes not synced" with *Sync now* and *Discard local*. If not dirty and the remote sha differs, replace local.
 - **Delete**: confirm dialog naming the trip; delete remote (if synced) and local.
 - **Copy live link** button: copies `config.base_url` + draft or published path. Note under it: "Live after the site rebuilds (about a minute)".
@@ -509,7 +510,7 @@ All screens are mobile-first and must also work well on desktop (max content wid
 2. **Trips** (home): search box; two groups, *Drafts* and *Published*, each sorted by title; each row shows title, kind, location, stop count, badges (`Active`, `Not synced`). Buttons: **New trip**, and if an active trip exists, a large **Add place here** button pinned to the bottom.
 3. **Trip editor:**
    - Top bar: back, title, sync status, **Sync**, **Publish**/**Unpublish**, overflow menu (Copy live link, Preview, Set as active trip, Make guide from this log, Delete).
-   - Fields: title, kind (segmented Guide/Log), slug (auto from title until edited), location (country, country code, region, city; prefilled from the first stop when empty; editable; leave region blank to omit it from the URL), computed URL path shown read-only below, trip note (auto-growing textarea with Markdown hint, labelled "Trip note"), and **PhotoField**: search a Wikipedia article title (`findWikipediaPhoto`), preview the lead image with its credit, accept or clear it.
+   - Header fields, in this order: **Title**; **Kind** (segmented Guide/Log) with **Slug** beside it (auto from title until edited; the computed URL path is shown as small text under the slug); **Trip note** (auto-growing textarea, Markdown hint); **PhotoField** (search a Wikipedia article title with `findWikipediaPhoto`, preview the lead image and credit, accept or clear it; the Find button sits beside the field); a collapsible **Location** toggle (same `details-toggle` style as the stop form's address toggle) that shows a summary (`city, region, country`) when collapsed and is open by default only when the trip has no country. Location fields: **Country** (text input with a `<datalist>` of all ISO countries from `src/editor/app/countries.js`, built with `Intl.DisplayNames`; choosing a known name also fills the country code), country code, region, city. Location is prefilled from the first stop when empty; leave region blank to omit it from the URL.
    - **Sections:** each with drag handle, letter, title input, style toggle (Route/List), section note (auto-growing textarea, collapsed to one line until focused), stop count, collapse toggle, overflow menu (Move up/down, Delete section).
    - **Stops:** cards with drag handle, number (or letter for off-route stops), name, time, compact rating; tap to expand into the **compact stop form**, in this order:
      1. name, then the **note** (Markdown) directly under it;
@@ -879,6 +880,7 @@ Use for local builds, tests and screenshots. No `place_id`s (null). Content belo
 ### Phase 7 — Workflows, template, scripts, docs
 
 - `.github/workflows/editor.yml` (§9.1), `.github/workflows/release.yml` (§9.3), `templates/data-repo/*` (§9.2, §9.4), `.env.example`, all scripts (§10). Make the bash scripts executable. Run `bash -n` on each.
+- `AGENTS.md`: under 60 lines: commands, layout, the rules that are easy to break (privacy, escaping, `#trip-data`, shared numbering, secrets, service-worker cache, never run the deploy scripts), and the workflow (tests, keep this spec updated, no push unless asked).
 - Documentation (take real screenshots of the Pisa example with a real Maps key *without committing the key*; save as `docs/images/trip-desktop.jpg` and `trip-mobile.jpg`):
   - `README.md`: short and public-facing. Title and one-liner; both screenshots at the top; **What it does** (logs and guides, capture on the go, editing with drag and drop, notes and ratings, off-route recommendations, drafts and publishing, reader features, Markdown/`llms.txt`/JSON-LD, privacy); **How it works** (ASCII diagram of editor → data repo → pinned tripbook release → Pages site; stack in one line); **Run it locally** (`npm install`, `npm test`, `npm run build:example && npm run serve`, `npm run build:editor:demo && npm run serve:editor`, "Use sample data"); **Run your own** (link to DEPLOY); a documentation list; license.
   - `docs/DEVELOPMENT.md`: setup, command table, the example site and local Maps key (never commit it), trying the editor without GitHub (§8.9) and service-worker caveats, test table, code layout, conventions, how releases reach the site.
@@ -896,7 +898,7 @@ Run and fix until all are true:
 - Draft HTML contains `noindex`; `_site/index.html`, `sitemap.xml` and `llms.txt` do not mention any draft.
 - `find _site -name '*.json'` returns nothing.
 - Every user-visible string is escaped (spot-check the render code for any unescaped interpolation).
-- `README.md`, `docs/DEPLOY.md`, `docs/DEVELOPMENT.md`, `docs/DATA-MODEL.md`, `docs/images/*`, `LICENSE` exist; no file contains a Maps key (search for the key prefix `AIza` finds nothing).
+- `README.md`, `AGENTS.md`, `docs/BUILD.md`, `docs/DEPLOY.md`, `docs/DEVELOPMENT.md`, `docs/DATA-MODEL.md`, `docs/images/*`, `LICENSE` exist; no file contains a Maps key (search for the key prefix `AIza` finds nothing).
 - Commit "Phase 8: final verification".
 
 Then tell the user, in at most 10 lines: what was built, the commands to preview locally, and "Next: follow docs/DEPLOY.md", plus any assumptions you made.

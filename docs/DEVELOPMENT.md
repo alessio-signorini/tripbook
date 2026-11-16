@@ -109,4 +109,4 @@ push to main ──▶ Editor workflow ──▶ editor redeployed
 - By hand: `scripts/release.sh <version>` (clean `main`, tests, tag, push, move the pin, rebuild).
 - A schema change needs care: bump `SCHEMA_VERSION` only for breaking changes; optional new fields do not need it. A build refuses trips newer than it supports.
 
-See [DEPLOY.md](DEPLOY.md) for the full setup.
+See [DEPLOY.md](DEPLOY.md) for the full setup. AI agents should also read [AGENTS.md](../AGENTS.md); [BUILD.md](BUILD.md) is the full spec.

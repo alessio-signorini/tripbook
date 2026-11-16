@@ -60,7 +60,7 @@ Fork this repo, create a data repo, and follow **[docs/DEPLOY.md](docs/DEPLOY.md
 - [docs/DEPLOY.md](docs/DEPLOY.md): set up your own instance, step by step, plus troubleshooting
 - [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md): local development, tests, code layout, releases
 - [docs/DATA-MODEL.md](docs/DATA-MODEL.md): trip and config JSON, URLs, privacy rules, LLM output
-- [BUILD.md](BUILD.md): the full build spec an AI coding agent can follow to regenerate this project
+- [docs/BUILD.md](docs/BUILD.md): the full build spec an AI coding agent can follow to regenerate this project
 
 ## License
 
