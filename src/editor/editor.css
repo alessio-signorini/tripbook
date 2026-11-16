@@ -93,7 +93,9 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .segmented { display: inline-flex; border: 1px solid #c9ccc6; border-radius: 10px; overflow: hidden; }
 .segmented button { min-height: 44px; padding: 0 16px; border: 0; background: #fff; cursor: pointer; }
 .segmented button[aria-pressed="true"] { background: var(--ink); color: #fff; }
-.path-preview { color: var(--muted); font-size: 0.85rem; word-break: break-all; margin: -6px 0 12px; }
+.field .row.nowrap { flex-wrap: nowrap; }
+.field .row.nowrap > input { flex: 1; min-width: 0; width: auto; }
+.field .row.nowrap > .btn { flex: none; }
 
 .section-card { border: 1px solid var(--border); border-radius: var(--radius); margin: 16px 0; background: #fafaf8; }
 .section-head { display: flex; align-items: center; gap: 8px; padding: 8px; flex-wrap: wrap; }
@@ -159,4 +161,5 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .details { padding-bottom: 6px; }
 @media (max-width: 520px) { .rt-row { grid-template-columns: 1fr; } }
 .kind-slug { display: flex; gap: 12px; align-items: flex-end; }
-.kind-slug .grow { flex: 1; min-width: 0; }
+.kind-slug .grow { flex: 1; min-width: 0; position: relative; }
+.slug-url { position: absolute; left: 4px; right: 0; top: 100%; font-size: 0.7rem; line-height: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

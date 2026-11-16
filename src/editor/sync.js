@@ -35,7 +35,7 @@ export async function syncTrip(gh, rec, config) {
   const { trip, path } = prepare(rec, config);
   const folder = rec.folder || 'drafts';
   const sha = await gh.putFile(filePath(folder, trip.id), trip, rec.sha, `Sync: ${trip.title}`);
-  return { ...rec, trip, folder, sha, dirty: false, path_at_sync: path, auto_sync: true };
+  return { ...rec, trip, folder, sha, dirty: false, synced_at: new Date().toISOString(), path_at_sync: path, auto_sync: true };
 }
 
 export async function publishTrip(gh, rec, config) {
@@ -43,7 +43,7 @@ export async function publishTrip(gh, rec, config) {
   if (rec.dirty || rec.folder !== 'drafts') cur = await syncTrip(gh, { ...rec, folder: rec.folder || 'drafts' }, config);
   const { trip, path } = prepare(cur, config);
   const sha = await gh.moveFile(filePath('drafts', trip.id), filePath('published', trip.id), trip, cur.sha, `Publish: ${trip.title}`);
-  return { ...cur, trip, folder: 'published', sha, dirty: false, path_at_sync: path };
+  return { ...cur, trip, folder: 'published', sha, dirty: false, synced_at: new Date().toISOString(), path_at_sync: path };
 }
 
 export async function unpublishTrip(gh, rec, config) {
@@ -51,7 +51,7 @@ export async function unpublishTrip(gh, rec, config) {
   if (rec.dirty) cur = await syncTrip(gh, rec, config);
   const { trip, path } = prepare(cur, config);
   const sha = await gh.moveFile(filePath('published', trip.id), filePath('drafts', trip.id), trip, cur.sha, `Unpublish: ${trip.title}`);
-  return { ...cur, trip, folder: 'drafts', sha, dirty: false, path_at_sync: path };
+  return { ...cur, trip, folder: 'drafts', sha, dirty: false, synced_at: new Date().toISOString(), path_at_sync: path };
 }
 
 export async function deleteRemote(gh, rec) {
@@ -72,7 +72,7 @@ export async function fetchRemote(gh, id, preferredFolder) {
 export async function loadTheirs(gh, rec, config) {
   const remote = await fetchRemote(gh, rec.trip.id, rec.folder);
   if (!remote) throw new Error('The trip no longer exists on GitHub.');
-  return { ...rec, trip: remote.trip, folder: remote.folder, sha: remote.sha, dirty: false, path_at_sync: tripPath(remote.trip, config) };
+  return { ...rec, trip: remote.trip, folder: remote.folder, sha: remote.sha, dirty: false, synced_at: new Date().toISOString(), path_at_sync: tripPath(remote.trip, config) };
 }
 
 export async function overwrite(gh, rec, config) {

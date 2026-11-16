@@ -68,7 +68,7 @@ export function TripEditor({ id }) {
     <div class="editor-bar">
       <a class="icon-btn" href="#/" aria-label="Back to trips">←</a>
       <span class="grow">${trip.title || 'Untitled trip'}</span>
-      <span class="status">${rec.dirty ? 'Not synced' : 'Synced'}</span>
+      <span class="status">${rec.dirty ? 'Not synced' : rec.synced_at ? `Synced ${new Date(rec.synced_at).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}` : 'Synced'}</span>
       <button class="btn btn-small" disabled=${working} onClick=${() => doSync(id)}>${busy.value === 'Sync' ? 'Syncing…' : 'Sync'}</button>
       ${published
         ? html`<button class="btn btn-small" disabled=${working} onClick=${() => doUnpublish(id)}>Unpublish</button>`
@@ -91,11 +91,13 @@ export function TripEditor({ id }) {
           <button type="button" aria-pressed=${trip.kind === 'log'} onClick=${() => set({ kind: 'log' })}>Trip log</button>
         </div>
       </div>
-      <${Field} label="Slug" class="grow"><input type="text" value=${trip.slug} autocapitalize="none" onInput=${(e) => set({ slug: e.target.value })} /><//>
+      <${Field} label="Slug" class="grow"><input type="text" value=${trip.slug} autocapitalize="none" onInput=${(e) => set({ slug: e.target.value })} /><small class="slug-url" title=${path}>${path}</small><//>
     </div>
     <${Field} label="Trip note"><${AutoTextarea} minRows=${3} placeholder="Markdown: **bold**, *italic*, [links](https://…), lists" value=${trip.note} onInput=${(note) => set({ note })} /><//>
     <${PhotoField} trip=${trip} onChange=${(photo) => set({ photo })} />
-    <button type="button" class="btn btn-small" aria-expanded=${showLoc} onClick=${() => setShowLoc(!showLoc)}>${showLoc ? 'Hide location' : 'Show location'}</button>
+    <button type="button" class="details-toggle" aria-expanded=${showLoc} onClick=${() => setShowLoc(!showLoc)}>
+      <span>${showLoc ? '▾' : '▸'} Location</span><span class="hint">${showLoc ? '' : [trip.location.city, trip.location.region, trip.location.country].filter(Boolean).join(', ')}</span>
+    </button>
     ${showLoc && html`<div class="grid2">
       <${Field} label="Country"><input type="text" list="country-list" value=${trip.location.country} onInput=${(e) => { const c = countryByName(e.target.value); setLoc(c ? { country: c.name, country_code: c.code } : { country: e.target.value }); }} /><//>
       <datalist id="country-list">${countries().map((c) => html`<option key=${c.code} value=${c.name} />`)}</datalist>
@@ -103,7 +105,6 @@ export function TripEditor({ id }) {
       <${Field} label="Region (optional)"><input type="text" value=${trip.location.region} onInput=${(e) => setLoc({ region: e.target.value })} /><//>
       <${Field} label="City (optional)"><input type="text" value=${trip.location.city} onInput=${(e) => setLoc({ city: e.target.value })} /><//>
     </div>`}
-    <p class="path-preview">${path}</p>
 
     <div class="row space" style="margin-top:20px">
       <h2>Sections</h2>

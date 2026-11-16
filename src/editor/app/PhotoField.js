@@ -31,7 +31,7 @@ export function PhotoField({ trip, onChange }) {
       <div class="grow"><small dangerouslySetInnerHTML=${{ __html: photoCredit(trip.photo) }}></small></div>
       <button type="button" class="btn btn-small" onClick=${() => onChange(null)}>Remove</button>
     </div>`}
-    <div class="row" style="gap:8px">
+    <div class="row nowrap" style="gap:8px">
       <input type="text" class="grow" aria-label="Wikipedia article" placeholder=${term ? `Wikipedia article (default: ${term})` : 'Wikipedia article, e.g. Pisa'} value=${query} onInput=${(e) => setQuery(e.target.value)} />
       <button type="button" class="btn btn-small" disabled=${state.busy || !term} onClick=${find}>${state.busy ? 'Searching…' : trip.photo ? 'Replace' : 'Find photo'}</button>
     </div>
