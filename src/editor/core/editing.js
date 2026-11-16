@@ -1,6 +1,12 @@
 import { slugify } from '../../shared/slug.js';
 import { newSection, newStop } from '../../shared/schema.js';
 
+/*
+ * Pure edit operations on a Trip (mutate the object passed in). The editor applies them through
+ * state/records.js updateTrip(), which hands them a clone.
+ */
+/** @typedef {import('../../shared/schema.js').Trip} Trip */
+
 const nowIso = () => new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
 
 /** Set the title; the slug follows the title until the user edits the slug. */

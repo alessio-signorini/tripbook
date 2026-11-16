@@ -3,7 +3,7 @@
 Build spec for an AI coding agent (Claude Sonnet 5.5 in VS Code Copilot, agent mode).
 Build the whole project from this file without asking the user anything, except at the single stop point at the end of Phase 0.
 
-This file describes the project **as it currently stands**, including everything added after the first version (off-route stops, trip photos, demo mode, `.env` support, automatic releases). Following it produces the same structure, modules, behavior, tests and documentation; it does not reproduce the author's code byte for byte. Keep this file in sync whenever behavior changes.
+This file describes the project **as it currently stands**, including everything added after the first version (off-route stops, trip photos, demo mode, `.env` support, automatic releases, the module layout of §4 and the performance work: inlined CSS, a self-hosted heading font, a lazily loaded map, editor code splitting). Following it produces the same structure, modules, behavior, tests and documentation; it does not reproduce the author's code byte for byte. Keep this file in sync whenever behavior changes.
 
 ---
 
@@ -15,7 +15,7 @@ This file describes the project **as it currently stands**, including everything
 4. Never ask the user questions after Phase 0. When something is unspecified, pick the simplest option that satisfies this spec and mention it in the commit message. If it is a lasting design choice, add it to §2 of this file.
 5. Terminal commands must be non-interactive. Use `--yes`/`-y` flags. Never start a long-running process (dev server, watcher) in the foreground. Verify with builds and tests, not by watching a server.
 6. Make no network calls to Google or GitHub in tests. Mock `fetch`.
-7. After each phase: run `npm test`, `npm run build:example` and `npm run build:editor` (once they exist), fix failures, then `git add -A && git commit -m "Phase N: <name>"`.
+7. After each phase: run `npm run check` (= `npm test && npm run build:example && npm run build:editor`, once they exist), fix failures, then `git add -A && git commit -m "Phase N: <name>"`.
 8. Keep dependencies to the list in §3.
 9. Write plain, readable code. Prefer one obvious way. No speculative abstractions, no feature flags, no TypeScript, no frameworks beyond §3.
 10. Do not run any script in `scripts/` that needs the user's GitHub or Google credentials (`setup-editor-pages.sh`, `create-data-repo.sh`, `release.sh`, `setup-auto-release.sh`). Write them. The user runs them.
@@ -74,10 +74,12 @@ A personal tool to log places visited on trips and to publish shareable trip log
 - **Nearby search:** Places Nearby Search, 75 m radius, 10 results, ranked by popularity, plus a text search box and "Drop pin at my location".
 - **Delete:** confirm dialog, then delete the file. Git history is the undo.
 - **DNS:** both domains are CNAME records to `<owner>.github.io`, **DNS only** (no Cloudflare proxy), so GitHub can issue and renew certificates (§10, docs).
+- **Code layout for agents:** small modules with one job each, in folders whose names say what is inside (§4): the editor splits UI (`screens/`, `components/`) from state (`state/`) and pure logic (`core/`); the trip page script is one module per concern (`src/site/trip/`). CSS is one declaration per line, grouped by component, and each group's header names the renderer or component that emits the markup. Data shapes are JSDoc `@typedef`s in `src/shared/schema.js` (no TypeScript).
+- **Performance:** public pages inline their CSS (no render-blocking stylesheet request) and preload one self-hosted font file; nothing render-blocking comes from third parties; the map starts after the first paint; the mobile sheet moves with `transform`; the editor loads SortableJS and the Preview renderer (with `marked`) as lazy chunks and re-renders only the stop cards that changed.
 - **Devcontainer** for all development.
 - **Local `.env`** (git-ignored) holds the author's deploy settings so scripts need no flags: `EDITOR_DOMAIN`, `SITE_DOMAIN`, `DATA_REPO` (owner optional), `MAPS_KEY`, `MAP_ID`, `AUTHOR`. Environment variables win over `.env`; flags win over both. `.env.example` is committed.
 - **Demo mode:** on localhost the editor can run against a fake GitHub kept in `localStorage`, seeded from the example data (§8.9).
-- **Small lasting choices:** `npm test` is `node --test "test/*.test.js"` (Node 24 rejects a bare directory); `buildSite()` and `buildEditor()` are exported so tests call them directly; the Maps loader lives in `src/shared/maps-loader.js` for both site and editor; the service worker only skips waiting when the page posts `skip-waiting` (the "Update available" toast); `github.js` treats any 409, and a 422 whose message mentions `sha` or `does not match`, as a conflict; `getFile` returns `{ data, sha }` (or `null` on 404) and `putFile` returns the new sha; trip records carry an `auto_sync` flag, set after the first Sync, so automatic retries only touch trips the user has synced; editor screens render only after local data has loaded (`ready` signal); `renderMarkdown` turns headings into bold paragraphs and drops images and unsafe link schemes; LICENSE holder is "Alessio Signorini".
+- **Small lasting choices:** `npm test` is `node --test "test/*.test.js"` (Node 24 rejects a bare directory); `buildSite()` and `buildEditor()` are exported so tests call them directly; the Maps loader lives in `src/shared/maps-loader.js` for both site and editor; colors that JavaScript needs (map pins, star input) come from `src/shared/theme.js`, which mirrors `src/shared/tokens.css`; `directionsUrl` always returns an array; the service worker only skips waiting when the page posts `skip-waiting` (the "Update available" toast); `github.js` treats any 409, and a 422 whose message mentions `sha` or `does not match`, as a conflict; `getFile` returns `{ data, sha }` (or `null` on 404) and `putFile` returns the new sha; trip records carry an `auto_sync` flag, set after the first Sync, so automatic retries only touch trips the user has synced; editor screens render only after local data has loaded (`ready` signal); `renderMarkdown` turns headings into bold paragraphs and drops images and unsafe link schemes; LICENSE holder is "Alessio Signorini".
 
 ---
 
@@ -90,11 +92,12 @@ One language (JavaScript) for the site build and the editor, so rendering code i
 - **Drag and drop:** SortableJS.
 - **IndexedDB:** idb-keyval.
 - **Markdown:** marked.
-- **Bundler:** esbuild (JS API, called from the build scripts).
+- **Bundler:** esbuild (JS API, called from the build scripts); code splitting for the editor's lazy chunks; CSS `@import` and font files resolved by esbuild.
 - **Tests:** `node:test` + `node:assert` (built in).
 - **Photos:** Wikipedia and Wikimedia Commons APIs, called from the editor only (`src/shared/wikipedia.js`).
 - **Static server for local preview:** sirv-cli (dev dependency).
 - **Icons:** sharp (dev dependency, used once by `scripts/make-icons.mjs`; the PNGs are committed).
+- **Fonts:** body text uses the system UI stack (`system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`). Headings on the public site use **Space Grotesk 700**, self-hosted: the Latin and Latin-ext `woff2` subsets from Google Fonts are committed in `src/site/fonts/` with the SIL OFL licence (`OFL.txt`). No Google Fonts requests. The editor uses the system stack only.
 - **Maps:** Google Maps JavaScript API via the official dynamic bootstrap loader (inline snippet), `importLibrary("maps" | "marker" | "places" | "geocoding")`. Advanced Markers with `PinElement`. Map ID from config (`"DEMO_MAP_ID"` as default).
 
 Dependencies (exact list):
@@ -110,6 +113,7 @@ Dependencies (exact list):
 ```
 .devcontainer/devcontainer.json
 .github/workflows/editor.yml   test, build, deploy the editor (§9.1)
+.github/workflows/release.yml  tag a release when site-building code changes (§9.3)
 AGENTS.md                      short guide for AI agents working on the project (commands, layout, rules)
 README.md                      short public intro with screenshots (§13 Phase 7)
 LICENSE                        (MIT)
@@ -121,49 +125,78 @@ docs/DATA-MODEL.md             trip/config JSON, URLs, privacy
 docs/images/                   trip-desktop.jpg, trip-mobile.jpg (README screenshots)
 package.json
 src/
-  shared/
-    schema.js             SCHEMA_VERSION; DEFAULT_CONFIG; mergeConfig(); validateTrip(trip) -> string[]; newTrip(); newSection(); newStop()
+  shared/                 used by the site build, the trip page script and the editor
+    schema.js             JSDoc typedefs (Trip, Section, Stop, Photo, Location, TripRecord, Config); SCHEMA_VERSION;
+                          DEFAULT_CONFIG; mergeConfig(); validateTrip(trip, file) -> string[]; newTrip(); newSection(); newStop()
     slug.js               slugify(text)
-    paths.js              tripPath(trip, config, {draft}) ; listingPrefixes(trip, config); listingCrumbs(); findCollisions()
-    maps-links.js         shortlistUrl, shortlistCount, directionsUrl, stopDirectionsUrl, openInMaps(stops, routeStops)
-    maps-loader.js        Google Maps JS bootstrap loader (site and editor)
+    paths.js              tripPath(trip, config, {draft}); listingPrefixes(trip, config); listingCrumbs(); findCollisions()
+    maps-links.js         directionsUrl(stops) -> string[]; routeLinks(stops) -> [{url,label}]; stopDirectionsUrl(stop); openInMaps(routeStops)
+    maps-loader.js        loadMaps(key) -> importLibrary: Google Maps JS bootstrap loader (site and editor)
     markdown.js           renderMarkdown(text) with HTML escaped; stripMarkdown(text, max)
     format.js             formatMinutes, sectionLetter, totalMinutes, escapeHtml, locationText, shortAddress, kindLabel, plural
-    rating.js             renderStars(rating), renderStarCompact(rating), isLow(stop)
-    visible.js            visibleStops(trip, {showLow}) -> sections with numbering, off-route letters, counts, minutes; allVisible()
+    rating.js             renderStarCompact(rating), isLow(stop)
+    visible.js            visibleStops(trip, {showLow, showOffRoute}) -> SectionEntry[] (numbering, off-route letters, counts, minutes); allVisible()
     wikipedia.js          findWikipediaPhoto(title, fetchImpl) -> trip.photo object | null
-    render/
-      layout.js           page shell (head, fonts, css link, analytics slot, noindex)
-      trip.js             renderTripPage(trip, ctx) -> HTML string
-      listing.js          renderListing(groups, ctx) -> HTML string (index + prefix pages)
+    theme.js              COLORS and STAR_PATH for JavaScript (mirror of tokens.css)
+    tokens.css            CSS custom properties (colors, radius, fonts), @imported by site.css and editor.css
+    render/               pure functions returning strings; the editor's Preview calls the same ones
+      layout.js           renderLayout(opts): page shell (head, inlined CSS or link, font preload, preconnect, analytics, noindex)
+      trip.js             renderTripPage(trip, ctx); tripClientData(trip); CLIENT_STOP_FIELDS
+      listing.js          renderListing(items, ctx) (index + prefix pages); groupTrips(); sortedTrips()
       redirect.js         renderRedirect(toUrl)
+      seo.js              renderRobots(config), renderSitemap(paths, config), AI_AGENTS
       trip-md.js          renderTripMarkdown(trip, ctx) -> Markdown string (§7.10)
       llms.js             renderLlmsTxt(trips, ctx), renderLlmsFull(trips, ctx)
-      jsonld.js           tripJsonLd(trip, ctx) -> object
+      jsonld.js           tripJsonLd(trip, ctx) -> JSON string
       photo.js            photoCredit(photo) -> credit line HTML
       icons.js            inline SVG icons for the site
   build/
-    bundle.mjs            esbuild helpers + content hashing (shared)
-    build-site.mjs        CLI: --data <dir> --out <dir>   (run by the data repo)
-    build-editor.mjs      CLI: --out <dir>                (run by this repo)
-  site/
-    site.css
-    trip.js               map, bottom sheet, low-rating switch, list<->map sync
+    bundle.mjs            bundleJs / bundleCss (esbuild) + content hashing
+    cli.mjs               isMain, arg, flag, run, usage for the two CLIs
+    build-site.mjs        buildSite(); CLI: --data <dir> --out <dir>   (run by the data repo)
+    build-editor.mjs      buildEditor(); CLI: --out <dir> [--demo]     (run by this repo)
+  site/                   the public trip page in the browser
+    site.css              all site styles (listing and trip pages)
+    fonts/                space-grotesk-700-latin.woff2, space-grotesk-700-latin-ext.woff2, OFL.txt
+    trip/
+      main.js             entry: reads #trip-data, wires the modules, switches, selection, share, locate
+      dom.js              $, $$, MOBILE_QUERY/mobile, rafThrottle, afterFirstPaint, toast
+      prefs.js            persistedFlag(key, fallback): switch state in localStorage
+      list.js             createList(): applies visibleStops() to rows, legs, badges, totals and Maps links
+      sheet.js            createSheet(): mobile bottom sheet (snaps, drag)
+      clamp.js            watchClamps(): More/Less for 3-line notes on mobile
+      map.js              createMapView(): Google map, reusable markers, route lines, fit, location dot
   editor/
-    index.html
-    main.js               app entry (Preact)
-    app/                  Preact screens: App, Setup, Trips, TripEditor, Sections, StopCard, Capture, MapPicker, PhotoField, Settings, Conflict, fields, ui, state, countries
-    github.js             GitHub REST client
-    sync.js               sync, publish, unpublish, delete, conflict resolution, pull
-    store.js              IndexedDB + localStorage persistence
-    demo.js               fake GitHub client + sample-data seeding (§8.9)
-    editing.js            pure trip edit operations (setTitle, moveStop, moveSection, autofillLocation, makeGuide, …)
-    places.js             Google Places / Geocoder helpers
-    capture.js            geolocation + "Day N" section logic + coordinate parsing
+    index.html            shell with {{CSS}} and {{JS}} placeholders
+    main.js               entry: global listeners, render <App>, init(), service worker, conflict handler
+    App.js                header, update banner, hash-route screen switch, modal and toast hosts
     editor.css
     sw.js                 service worker (scope /)
     manifest.webmanifest
     icons/                icon.svg, icon-192.png, icon-512.png, maskable-512.png, apple-touch-icon.png
+    screens/              Setup.js, Trips.js, TripEditor.js, Capture.js, Settings.js
+    components/           html.js (htm binding), controls.js (memo, AutoTextarea, StarInput, Menu, Field, Chips,
+                          CountryList), overlays.js (Toasts, ModalHost), Sections.js, StopCard.js, PhotoField.js,
+                          MapPicker.js, Conflict.js
+    state/                Preact signals and the actions that change them (§8.10); index.js re-exports all
+      signals.js          settings, trips, configRec, config, toasts, modal, busy, buildInfo, syncErrors, updateReady, ready, dirtyCount
+      router.js           route, parseHash, navigate
+      ui.js               toast, dismissToast, showModal, closeModal, confirmDialog
+      connection.js       isConfigured, gh, saveConnection, updateSettings, setActive
+      records.js          saveRecord, removeRecord, updateTrip, structural, newTripAndOpen, flushPendingSaves, recoverUnsaved
+      actions.js          init, refresh, doSync, doPublish, doUnpublish, doDiscardLocal, doDelete, autoRetry, registerConflictHandler
+      site-config.js      pushConfig, pullConfig, rebuildSite
+      pwa.js              registerServiceWorker, applyUpdate
+    core/                 no UI; unit-tested
+      github.js           GitHub REST client
+      sync.js             sync, publish, unpublish, delete, conflict resolution, pull; newRecord, stopCount
+      store.js            IndexedDB + localStorage persistence (settings, trip records, config, unsaved-edit stash)
+      demo.js             fake GitHub client + sample-data seeding (§8.9)
+      editing.js          pure trip edit operations (setTitle, findStop, add/move/delete section and stop,
+                          autofillLocation, makeGuide) and reuseUnchanged (structural sharing)
+      places.js           Google Places / Geocoder helpers, geolocation, parseCoordinates
+      capture.js          "Day N" section logic, captured_at, capture trips
+      countries.js        ISO country list via Intl.DisplayNames; countryByName
 templates/
   data-repo/
     README.md
@@ -185,19 +218,21 @@ scripts/
   setup-auto-release.sh
   make-icons.mjs
 test/
-  *.test.js
+  fixtures.js             load(), pisa(), sb(), layover(): fresh copies of the example trips
+  *.test.js               one file per module or area (§12)
 ```
 
 `package.json` scripts:
 
 ```json
 {
+  "test": "node --test \"test/*.test.js\"",
+  "check": "npm test && npm run build:example && npm run build:editor",
   "build:example": "node src/build/build-site.mjs --data examples/data --out _site",
   "build:editor": "node src/build/build-editor.mjs --out _editor",
   "build:editor:demo": "node src/build/build-editor.mjs --out _editor --demo",
   "serve": "sirv _site --port 8080 --dev --host",
   "serve:editor": "sirv _editor --port 8081 --dev --host --single",
-  "test": "node --test \"test/*.test.js\"",
   "icons": "node scripts/make-icons.mjs"
 }
 ```
@@ -272,6 +307,7 @@ Field rules (implement in `validateTrip`; the site build fails with a clear mess
 - `sections`: array (may be empty for a new trip). Section `id` unique within trip. `title`: string (may be empty). `note`: string (may be empty). `style`: `"route" | "list"`. `auto_date`: `YYYY-MM-DD` or null (editor-only, never rendered).
 - Stop `id` unique within trip. `name`: non-empty. `lat` in [-90, 90]; `lng` in [-180, 180]. `place_id`: string or null. `coords_source`: `"device" | "place" | "pin"`. `minutes`: positive integer or null. `leg_to_next`: string or null. `note`: string (may be empty). `rating`: integer 1–5 or null. `off_route`: optional boolean (only meaningful in `route` sections). `captured_at`: ISO string or null.
 - Unknown fields: allowed and preserved (forward compatibility).
+- Declare these shapes as JSDoc `@typedef`s at the top of `schema.js` (`Location`, `Photo`, `Stop`, `Section`, `Trip`, `TripRecord` (§8.1), `Config`) and reference them with `@param`/`@returns` in `visible.js`, the renderers and `src/editor/core/`.
 
 ### 5.2 `config.json` (data repo root)
 
@@ -311,7 +347,14 @@ All fields are optional; the site build and the editor fall back to these defaul
 
 ## 6. Build scripts
 
-A full rebuild every run is intended. No incremental logic. Hash = first 8 hex chars of SHA-256 of the output content.
+A full rebuild every run is intended. No incremental logic.
+
+`src/build/bundle.mjs` wraps esbuild (`bundle: true`, `minify: true`, `write: false`, `logLevel: 'silent'`):
+- `bundleJs(entry, outDir, baseName, { splitting })`: ESM, target es2020. With `splitting: true`, dynamic `import()` targets become chunks in `chunks/` (`chunkNames: 'chunks/[name]-[hash]'`).
+- `bundleCss(entry, outDir, baseName, { publicPath, emitEntry })`: inlines `@import`s; `.woff2` files referenced with `url()` are copied next to the CSS as `<name>-<hash>.woff2` (`loader: { '.woff2': 'file' }`, `assetNames: '[name]-[hash]'`); `publicPath` makes those URLs absolute (`/assets`, `/preview`). With `emitEntry: false` the CSS file itself is not written (the caller inlines it).
+- The entry file is written as `<baseName>.<hash>.<ext>`, hash = first 8 hex chars of SHA-256 of its content; every other output keeps esbuild's name. Both return `{ name, text, files }` (entry file name, entry contents, written paths).
+
+`src/build/cli.mjs`: `isMain(import.meta.url)` (run the CLI only when the file is the entry point), `arg(name)`, `flag(name)`, `run(promise)` (print only the error message and exit 1), `usage(text)` (exit 2).
 
 ### 6.1 Site build (`src/build/build-site.mjs`)
 
@@ -322,11 +365,11 @@ Steps:
 2. Load config, merge over `DEFAULT_CONFIG`.
 3. Load all trips. Validate. Collect all errors across all files, print them, exit 1 if any.
 4. Check path collisions (§5.3).
-5. Bundle `src/site/trip.js` → `assets/trip.<hash>.js` (minified, ESM, target es2020) and `src/site/site.css` → `assets/site.<hash>.css`.
+5. Bundle `src/site/trip/main.js` → `assets/trip.<hash>.js`. Bundle `src/site/site.css` with `publicPath: '/assets'` and `emitEntry: false`: the fonts land in `assets/` as `space-grotesk-700-latin-<hash>.woff2` and `space-grotesk-700-latin-ext-<hash>.woff2`, and the CSS text is passed to every page as `assets.cssText` (inlined, §7.7) with `assets.font` = the Latin font URL (preloaded). No `.css` file is written.
 6. Render each published trip to `<path>/index.html`. Render each draft to `/drafts<path>/index.html` with `noindex`.
 7. Render listing pages from published trips only: `/index.html` (all) and every listing prefix (`/italy/index.html`, `/usa/california/index.html`, …).
 8. Render redirects for `old_paths`.
-9. Write `404.html` (simple, links to `/`), `robots.txt` (§7.10), `sitemap.xml` (published trip URLs and listing URLs, absolute with `base_url`, **no `lastmod`**).
+9. Write `404.html` through `renderLayout` (title `Not found · <site_title>`, `noindex`, no Open Graph tags, inlined CSS, body `<main class="listing"><h1>Page not found</h1><p><a href="/">Back to all trips</a></p></main>`), `robots.txt` (`renderRobots`, §7.10) and `sitemap.xml` (`renderSitemap`: listing URLs then published trip URLs, absolute with `base_url`, **no `lastmod`**), both from `src/shared/render/seo.js`.
 10. For each published trip, write `<path>/index.md` (§7.10). Write `/llms.txt` and `/llms-full.txt` from published trips only.
 11. Never copy anything from `--data` into `--out`. Only rendered files and bundled assets go into the output.
 12. Every page gets `<meta name="generator" content="tripbook <package.json version>">`.
@@ -338,14 +381,14 @@ Input: `--out <dir>`. Output is the root of the editor site.
 
 Steps:
 1. Empty `--out`.
-2. Bundle `src/editor/main.js` → `app.<hash>.js` and `src/editor/editor.css` → `editor.<hash>.css`.
-3. Bundle the site assets for Preview: `preview/trip.<hash>.js`, `preview/site.<hash>.css` (same sources as §6.1).
+2. Bundle `src/editor/main.js` → `app.<hash>.js` with `splitting: true` (lazy chunks for SortableJS and the Preview renderer, plus shared chunks, in `chunks/`), and `src/editor/editor.css` → `editor.<hash>.css`.
+3. Bundle the site assets for Preview: `preview/trip.<hash>.js` (from `src/site/trip/main.js`) and `preview/site.<hash>.css` (from `src/site/site.css`, written as a file, with `publicPath: '/preview'` so its fonts load from `preview/`).
 4. Copy `index.html` with the hashed names injected, `manifest.webmanifest`, `icons/`.
 5. Write `build.json`: `{ version, commit, preview: { trip_js, site_css } }`. `version` from `package.json`; `commit` = first 7 chars of `GITHUB_SHA`, else `git rev-parse --short HEAD`, else `"dev"`.
-6. Write `sw.js` with `CACHE_VERSION` = hash of all output asset names, and the list of shell files to precache (including `build.json` and the preview assets).
+6. Write `sw.js` with `CACHE_VERSION` = `tripbook-` + hash of all output file names, and `SHELL` = `/` plus every output file except `sw.js`, `404.html`, `*.map` and `demo/` (so `build.json`, the lazy chunks, the preview assets and fonts are all precached).
 7. Write `404.html` that redirects to `/` (the editor uses hash routes).
 8. With `--demo` (`npm run build:editor:demo`): also write `demo/data.json` (config, published and draft trips from `examples/data`) used by §8.9. It is never added to the service-worker shell list. The deployed editor is built without `--demo`.
-9. `buildEditor({ out, demo, log })` and `buildSite({ data, out, log })` are exported; the CLI runs only when the file is the entry point.
+9. `buildEditor({ out, demo, log })` and `buildSite({ data, out, log })` are exported; the CLI runs only when the file is the entry point (`isMain` from `cli.mjs`).
 
 ---
 
@@ -353,8 +396,10 @@ Steps:
 
 ### 7.1 Visual design tokens (from the approved mockups)
 
-- Fonts: Inter (body; 400/500/600/700) and Space Grotesk (headings; 500/700) via Google Fonts `css2` link.
-- Colors: ink `#1A1D21`, body text `#2F3337`, secondary `#5F6368`, border `#E4E6E1`, surface `#F1F2EF`, page `#FFFFFF`, accent (pins, route) `#C2410C`, accent text on white `#9A3412`, selected-row tint `#FBEFE9`, location dot `#1A73E8`, empty star `#D3D6D0`.
+- Fonts: system UI stack for text; Space Grotesk 700 for headings, the stop badge and the mobile title (self-hosted, §3). `@font-face` rules at the top of `site.css` (`font-display: swap`, the Google Fonts `unicode-range` for each subset).
+- Colors: ink `#1A1D21`, body text `#2F3337`, secondary `#5F6368`, border `#E4E6E1`, input border `#C9CCC6`, switch track and empty star `#D3D6D0`, surface `#F1F2EF`, editor section background `#FAFAF8`, page `#FFFFFF`, accent (pins, route) `#C2410C`, accent text on white `#9A3412`, selected-row tint `#FBEFE9`, location dot `#1A73E8`, danger `#B91C1C`, ok `#166534` on `#DCFCE7`, warning `#78350F` on `#FDE68A`, publish `#1A7F37`.
+- All of these are CSS custom properties in `src/shared/tokens.css`, `@import`ed by `site.css` and `editor.css` (no color literals elsewhere except white/black and shadows). `src/shared/theme.js` exports the few JS needs (`COLORS.accent`, `ink`, `muted`, `track`, `white`, and `STAR_PATH`).
+- CSS style: one declaration per line; rules grouped by component in page order; each group's comment names the renderer function or component that emits the markup (e.g. `/* stopRow */`); media queries sit inside their component's group. Breakpoint: desktop ≥ 900 px, mobile ≤ 899.98 px (`MOBILE_QUERY` in `src/site/trip/dom.js` must match). Hover styles only inside `@media (hover: hover)` so they do not stick after a tap.
 - Radius 10–16 px; touch targets ≥ 44 px; visible focus rings; text contrast ≥ 4.5:1.
 - Icons: inline stroke SVG, no emoji, no icon font.
 
@@ -365,7 +410,7 @@ Steps:
 - **Body:** two columns. Left: map, sticky, height `calc(100vh - 32px)`, min 520 px. Right (list column, 100 px wider than the first design): the low-rated switch (§7.9), then the stop list. **There are no section tabs**: every section is shown inline, one after another.
 - **Stop row:** number badge (`3`, or `A3` when the trip has more than one section), name (H3), the time pill (`20 min`, `1 h 30 min`; omitted if null) right after the name, then one line with the compact rating (one proportional star + `(4/5)`, §7.8) to the left of the address (secondary text), then the stop note (Markdown). Title, stars and address are tightly spaced. Between consecutive visible stops in a `route` section, a dotted connector with `leg_to_next` text if present. A small directions icon (no text) links to `stopDirectionsUrl` (§7.5).
 - **Section header** (shown when the trip has more than one section or the section has a title): `A · Lahaina` (letter only when more than one section), stop count, total time, and for `route` sections the **Route in Google Maps** link. Below it, the section `note` (Markdown) when non-empty.
-- Hover or focus on a stop row highlights its pin. Click on a pin scrolls to and highlights the row.
+- Hover or focus on a stop row highlights its pin. Click on a pin scrolls to and highlights the row. Clicking a row selects it (tint) and highlights its pin.
 - Separators in text are `·`.
 
 ### 7.3 Trip page — mobile (< 900 px) — "Layout B"
@@ -374,28 +419,31 @@ The reader is on the ground. No editing or sharing chrome.
 - Full-screen map behind everything.
 - **Top floating card** (left): title (one line, ellipsis) and `By <author> · about <total>`. **Top-right**: one 52 px icon-only button, `aria-label="Open in Google Maps"`, linking per §7.5.
 - **Blue location dot** via `navigator.geolocation.watchPosition`, only after the user taps the "locate" button (never prompt on load).
-- **Bottom sheet** with drag handle and three snap points (peek 28 %, half 55 %, full 90 %). Pointer-events drag on the handle and header; snap to nearest on release; the handle is a button that cycles snap points.
-- Inside the sheet: the low-rated switch, then the trip note (clamped to 3 lines with a **More** toggle), then the sections and stops.
+- **Bottom sheet** (`#sheet`, `src/site/trip/sheet.js`) with drag handle and three snap points showing 28 %, 55 % and 90 % of the viewport. The sheet is always `90dvh` tall and slides with `transform: translateY()` (CSS starts it at `translateY(62dvh)`, the 28 % snap, so there is no jump when the script runs); dragging and snapping never change its height, so the list is not re-laid-out per frame. After each snap the scroll area gets `padding-bottom: 32px + hidden part` so the last stop can be scrolled into view. Pointer-events drag on the top strip (`.sheet-top`, `touch-action: none`), with move/up listeners attached only during a drag; snap to nearest on release; the handle is a button that cycles snap points (a click that ends a drag is ignored). Re-snap on viewport resize and when crossing the breakpoint. `.sheet-scroll` has `overscroll-behavior: contain` (no pull-to-refresh or page scroll chaining).
+- Inside the sheet: the switches (§7.9, §7.9a), then the trip note (`.m-note`), then the sections and stops. The trip note and section notes are clamped to 3 lines (`.clamp`); `src/site/trip/clamp.js` adds a **More**/**Less** button after each one that overflows, re-checking with a `ResizeObserver` (no `resize` listener; reads before writes). Desktop never clamps.
 - **Rows** show the number badge, name, time, and compact rating placed to the left of the address or note. The rating star is floated so wrapped text runs under it. Instead of the full address, mobile shows the stop note, or, when there is no note, the **short address** (`shortAddress()`: street only, dropping city, region, country and postal parts). Both `.addr-full` and `.addr-short` are in the HTML and toggled by a media query. A 44 px directions icon button is on each row. Tapping a pin selects its stop, scrolls the sheet to it and raises the sheet to half if at peek.
 - Hide the header share button and the desktop "Open in Google Maps" button on mobile.
 
-### 7.4 Map behavior (`src/site/trip.js`)
+### 7.4 Trip page script (`src/site/trip/`)
 
-- Trip data is embedded in the page as `<script type="application/json" id="trip-data">` containing only fields the client script needs: `id`, `kind`; section ids, letters, titles, styles; stops' id, name, lat, lng, place_id, rating, **minutes** and (when true) **off_route**. `trip.js` needs `minutes` and `off_route` to recompute totals and labels when the switch changes (it breaks silently without them). **No dates.**
-- The Maps key and Map ID are injected as data attributes on `<body>`. If the key is empty, show a placeholder box: "Map unavailable: add google_maps_api_key to config.json".
-- Advanced Markers with `PinElement` (`background #C2410C`, `borderColor #FFFFFF`, `glyph` = label, `glyphColor #FFFFFF`); the selected pin is `#1A1D21` and scaled 1.3. **Off-route pins** are white with a gray outline and a gray glyph (letter).
-- `route` sections: a dashed `Polyline` (straight segments, accent color) through the visible, on-route stops in order. `list` sections: no line.
-- Fit bounds to all visible markers with padding (on mobile, bottom padding = current sheet height).
-- Markers, lines, numbers and links always follow the low-rating switch (§7.9).
+- `main.js` is the entry. It reads `#trip-data`, creates the list (`list.js`), the sheet (`sheet.js`) and the clamps (`clamp.js`), binds the switches and row events, then calls `update()`: `visibleStops(data, { showLow, showOffRoute })` → `list.render(results)` and `mapView.render(results)`; `body.hide-stars` is set when the low-rated switch exists and is off. `select(id)` tints the row and highlights the pin; tapping a row or pin on mobile raises the sheet from peek to half.
+- Trip data is embedded in the page as `<script type="application/json" id="trip-data">` built by `tripClientData(trip)` in `render/trip.js`: `id`, `kind`, and per section `id`, `letter`, `title`, `style` and `stops` with only the fields in the exported `CLIENT_STOP_FIELDS` = `id`, `name`, `lat`, `lng`, `place_id`, `rating`, `minutes`, `off_route` (only when `true`; `undefined` values dropped). The script and the shared code it calls (visibility, totals, Maps links) must read nothing else; tests check both directions (§12). **No dates.** Escape `<` as `\u003c`.
+- The Maps key and Map ID are injected as `data-maps-key` / `data-map-id` on `<body>`. If the key is empty, show a placeholder box: "Map unavailable: add google_maps_api_key to config.json". When a key is set, the page has `<link rel="preconnect">` to `https://maps.googleapis.com` and `https://maps.gstatic.com`. `initMap()` runs after the first paint (`requestAnimationFrame` then `setTimeout 0`); on failure, toast "Map failed to load".
+- `map.js` `createMapView({ el, apiKey, mapId, center, onMarkerClick, bottomPadding })`: `Map` with `zoom 13`, `disableDefaultUI`, `zoomControl` on desktop only, `gestureHandling: 'greedy'`. Advanced Markers with `PinElement` (`background #C2410C`, `borderColor #FFFFFF`, `glyph` = label, `glyphColor #FFFFFF`); a selected or hovered pin is `#1A1D21` and scaled 1.3, and the selected one gets `zIndex 10`. **Off-route pins** are white with a gray outline and a gray glyph (letter). **Markers are created once per stop and reused:** `render()` toggles `marker.map` for visibility and repaints a pin only when its label or off-route state changed; `highlight(id)` repaints only the previous and the new selection; `hover(id, on)` repaints one pin. Route lines are recreated on each render.
+- `route` sections: a dashed `Polyline` (straight segments, accent color, `strokeOpacity 0` with a repeating `M 0,-1 0,1` icon every 14 px) through the visible, on-route stops in order. `list` sections: no line.
+- Fit bounds to all visible markers with padding `{ top 60, left 40, right 40, bottom 40 }`; on mobile, bottom = visible sheet height of the current snap + 20. One marker: zoom 15.
+- **Locate** (mobile button): `navigator.geolocation.watchPosition` (high accuracy) starts on the first tap and draws a `.loc-dot` Advanced Marker via `mapView.showLocation(pos)`; on error toast "Location unavailable".
+- **Share** (desktop): `navigator.share({ title, url })`, else copy the URL and toast "Link copied".
+- Markers, lines, numbers and links always follow the switches (§7.9).
 
 ### 7.5 Google Maps links (`src/shared/maps-links.js`)
 
-- `shortlistUrl(stops)`: `https://www.google.com/maps/@?api=1&map_action=shortlist&place_ids=<id1>,<id2>,…` using stops with a `place_id`, max 20, in order. Return null if none.
-- `directionsUrl(stops)`: `https://www.google.com/maps/dir/?api=1&origin=<lat,lng>&destination=<lat,lng>&waypoints=<lat,lng>|…&travelmode=walking`; add `origin_place_id`, `destination_place_id`, `waypoint_place_ids` (pipe-separated, aligned with waypoints) when every relevant stop has a `place_id`. Max 9 waypoints (11 stops total); if more, return an array of URLs, each chunk sharing its first stop with the previous chunk's last stop. Keep each URL ≤ 2048 characters (drop place_id params if needed to fit).
+- `directionsUrl(stops)`: `https://www.google.com/maps/dir/?api=1&origin=<lat,lng>&destination=<lat,lng>&waypoints=<lat,lng>|…&travelmode=walking`; add `origin_place_id`, `destination_place_id`, `waypoint_place_ids` (pipe-separated, aligned with waypoints) when every relevant stop has a `place_id`. Always returns an **array**: `[]` for fewer than 2 stops, one URL for up to 11 stops (9 waypoints), more when split, each chunk sharing its first stop with the previous chunk's last stop. Keep each URL ≤ 2048 characters (drop place_id params if needed to fit).
+- `routeLinks(stops)`: `[{ url, label }]` from `directionsUrl`, labelled `Route in Google Maps`, or `Part 1`, `Part 2`… when split. The renderer and `src/site/trip/list.js` both use it.
 - `stopDirectionsUrl(stop)`: `https://www.google.com/maps/dir/?api=1&destination=<lat,lng>&travelmode=walking` plus `destination_place_id` if present.
 - **Open in Google Maps** button: `openInMaps(routeStops)` over all visible on-route stops: the first `directionsUrl` (walking directions through every stop in order, so the user can press Start); with more than 11 stops the button opens part 1 and the per-section "Part N" links cover the rest. A single stop opens directions to it. **No note** is shown.
-- **Route in Google Maps** (route sections): `directionsUrl` over the section's on-route visible stops; multiple chunks render as `Part 1`, `Part 2`.
-- Always computed from **visible** stops (§7.9). The build computes them for the default state; `trip.js` recomputes them on toggle with the same modules.
+- **Route in Google Maps** (route sections of multi-section trips): `routeLinks` over the section's on-route visible stops, in `<span class="route-links">`.
+- Always computed from **visible** stops (§7.9). The build computes them for the default state; the trip page script recomputes them on toggle with the same modules.
 - Unit-test all limits and encodings.
 
 ### 7.6 Listing pages (`src/shared/render/listing.js`)
@@ -403,6 +451,7 @@ The reader is on the ground. No editing or sharing chrome.
 - `/`: site title, author, then groups: country (H2), then region (H3; trips without region listed directly under the country first), then trip cards sorted by title. Card: title (link), kind badge (`Guide` / `Trip log`), city (if any), `<N> stops`, total time, and a note excerpt (Markdown stripped, ≤ 200 chars). When the trip has a `photo`, a 96 px square thumbnail on the left. A collapsed **Photo credits** `<details>` block at the bottom of the page lists each photo's credit line (`photoCredit`: title, author, licence link, source link). **No dates.**
 - Prefix pages (`/usa/`, `/usa/california/`, …): same layout, filtered to that prefix, with a breadcrumb.
 - No maps on listing pages.
+- Each card list (`.cards`) has `content-visibility: auto` with `contain-intrinsic-size: auto 160px`, so long indexes skip layout and paint off screen.
 
 ### 7.7 Layout shell (`src/shared/render/layout.js`)
 
@@ -411,23 +460,22 @@ The reader is on the ground. No editing or sharing chrome.
 - Published trip pages: `<link rel="alternate" type="text/markdown" href="index.md">` and a `<script type="application/ld+json">` block from `tripJsonLd` (§7.10).
 - Drafts: `<meta name="robots" content="noindex">`, and no analytics.
 - Analytics slot: if `google_analytics_id` is non-empty and the page is published or a listing page, add the standard gtag.js snippet with that ID.
+- `renderLayout(opts)`: `opts.assets` is `{ cssText, font, js }` from the site build or `{ css, js }` (a stylesheet URL) from the editor's Preview. With `cssText` the CSS goes in a `<style>` element (`</style` escaped); otherwise a `<link rel="stylesheet">`. `assets.font` adds `<link rel="preload" as="font" type="font/woff2" crossorigin>`. `opts.preconnect` (origins) adds `<link rel="preconnect" crossorigin>`. `opts.robots: 'noindex'` and `opts.og: false` are used by the 404 page. No Google Fonts links.
 - Escape all user text. Markdown only through `renderMarkdown`.
 
 ### 7.8 Rating display (`src/shared/rating.js`)
 
-Both functions return inline SVG markup and are used by the site and the editor.
-- `renderStars(rating)` (used by the editor): five 16 px star icons in a row, 2 px gap. Stars `1..rating` filled `#C2410C`; the rest filled `#D3D6D0`. Wrapper has `role="img"` and `aria-label="Rated 4 out of 5"`.
-- `renderStarCompact(rating)`: one 16 px star, filled from left to right in proportion `rating / 5` (accent), with the remainder grey. Implement with a `linearGradient` whose two stops sit at the same offset (hard edge). Give each gradient a unique `id` per call. Follow it with `(4/5)` in 12 px secondary text. Same `role` and `aria-label`.
+- `renderStarCompact(rating)`: `<span class="stars-compact" role="img" aria-label="Rated 4 out of 5">`, then one 16 px star filled from left to right in proportion `rating / 5`, then `<span class="stars-num">(4/5)</span>`. The star is an `<svg viewBox="0 0 16 16">` with a grey `<path class="star-empty">` and a nested `<svg width="W" height="16" viewBox="0 0 W 16">` holding the accent `<path class="star-full">`, where W = 16 × rating / 5 (`12.8` for 4): the nested viewport clips the fill. No ids, no inline styles, so the output is deterministic. CSS: `.stars-compact` inline-flex, 3 px gap; `.star-empty` fill `var(--track)`; `.star-full` fill `var(--accent)`; `.stars-num` 12 px, secondary color.
 - `isLow(stop)`: `rating === 1 || rating === 2`. Unrated stops are never low.
-- Where each appears: the **site shows only the compact form** (desktop and mobile). The editor's collapsed cards use the compact form and its rating input uses five tappable stars. Null rating: render nothing.
-- Unit-test: star counts, gradient offset (`80%` for 4), unique IDs, aria labels, `isLow`.
+- The site shows only this compact form (desktop and mobile). The editor's rating input is five tappable stars (`StarInput`, using `STAR_PATH`; filled stars get class `on`). Null rating: render nothing.
+- Unit-test: the clip width (`12.8` for 4), determinism, no `id`/`style`, aria label, `isLow`.
 
 ### 7.9 Low-rated places toggle
 
 - Shown only when the trip has at least one low stop: a subdued, right-aligned switch above the stop list (desktop and mobile), labelled `Show low-rated places (N)`. Real `<input type="checkbox" role="switch">` with a `<label>`.
-- Default: off for `guide`, on for `log`. The viewer's choice is remembered in `localStorage["tripbook.show_low.<trip id>"]` (wrap in try/catch).
-- `visibleStops(trip, { showLow })` in `src/shared/visible.js` returns, per section: `stops` (each `{ stop, visible, offRoute, number, label }`), `visibleStops`, `routeStops` (visible and on-route), `count` and `minutes`. The build renders the default state with it; `trip.js` uses it again on toggle.
-- The HTML contains **every** stop. Stops hidden in the default state carry the `hidden` attribute and `data-low`. On toggle, `trip.js` shows or hides those rows, renumbers badges, updates counts, totals, legs (a leg connector is shown only between two visible stops), markers, polylines and all Google Maps links.
+- Default: off for `guide`, on for `log` (`data-show-low` on `<body>`). The viewer's choice is remembered in `localStorage["tripbook.show_low.<trip id>"]` through `persistedFlag` in `src/site/trip/prefs.js` (try/catch around storage).
+- `visibleStops(trip, { showLow, showOffRoute })` in `src/shared/visible.js` returns, per section (`SectionEntry`): `stops` (each `{ stop, visible, offRoute, number, label }`), `visibleStops`, `routeStops` (visible and on-route), `count` and `minutes`. The build renders the default state with it; the trip page script uses it again on toggle.
+- The HTML contains **every** stop. Stops hidden in the default state carry the `hidden` attribute and `data-low`. On toggle, `src/site/trip/list.js` shows or hides those rows, renumbers badges, updates counts, totals, legs (a leg connector is shown only between two visible stops), markers, polylines and all Google Maps links.
 - Without JavaScript the page shows the default state with correct numbers and links.
 - The editor ignores this and always shows every stop.
 
@@ -435,8 +483,9 @@ Both functions return inline SVG markup and are used by the site and the editor.
 
 - `stop.off_route === true` applies only in `route` sections; in `list` sections it is ignored.
 - An off-route stop keeps its place in the list order (with time, rating, address, note) but takes no number. It gets a letter label `A`, `B`, `C`… counted across the **whole trip** (not per section) and the following numbers do not skip. Numbers and letters are computed by `visibleStops`.
-- It is excluded from the polyline, from leg connectors (a leg is shown only between two visible **on-route** stops), from `Route in Google Maps` and from the directions fallback; it still counts in the stop total and time and is in the shortlist.
-- Rendering: the row has class `off-route` and a `badge-num off` (white fill, gray outline); the map pin is white with a gray outline and gray letter. `trip.js` recomputes labels on toggle.
+- It is excluded from the polyline, from leg connectors (a leg is shown only between two visible **on-route** stops), from `Route in Google Maps` and from **Open in Google Maps**; it still counts in the stop total and time.
+- When the trip has off-route stops, a second switch under the low-rated one reads `Show places off the path (N)` (`id="off-toggle"`, on by default; remembered in `localStorage["tripbook.show_off_route.<trip id>"]`). Off, those stops are hidden like low-rated ones (`visibleStops(trip, { showOffRoute: false })`).
+- Rendering: the row has class `off-route` and a `badge-num off` (white fill, gray outline); the map pin is white with a gray outline and gray letter. The trip page script recomputes labels on toggle.
 - The example data includes one (§11).
 
 ### 7.10 LLM and crawler output
@@ -462,7 +511,7 @@ Both functions return inline SVG markup and are used by the site and the editor.
 - **`/llms.txt`** (`src/shared/render/llms.js`), following the llms.txt proposal: `# <site_title>`, a one-line blockquote (`> Trip logs and city guides by <author>.`), then one `## <Country>` heading per country with a bullet per published trip: `- [<title>](<absolute .md URL>): <kind>, <city or region>, <N> stops`. Sorted like the index.
 - **`/llms-full.txt`**: every published trip's Markdown concatenated, separated by `\n\n---\n\n`, same order.
 - **JSON-LD** (`src/shared/render/jsonld.js`) on published trip pages: `{"@context":"https://schema.org","@type":"TouristTrip","name","description" (trip note, Markdown stripped),"url","author":{"@type":"Person","name"},"image" (photo URL, only when present),"itinerary":{"@type":"ItemList","itemListElement":[{"@type":"ListItem","position","item":{"@type":"Place","name","address","geo":{"@type":"GeoCoordinates","latitude","longitude"}}}]}}`, visible stops only. **No ratings and no dates.** Serialize with `JSON.stringify` and escape `<` as `\u003c`.
-- **`robots.txt`**: always `User-agent: *` / `Disallow: /drafts/` and the `Sitemap:` line. If `config.ai_crawlers` is `"disallow"`, add a block per agent: `GPTBot`, `ChatGPT-User`, `OAI-SearchBot`, `ClaudeBot`, `Claude-User`, `Claude-SearchBot`, `Google-Extended`, `CCBot`, `PerplexityBot`, `Applebot-Extended`, `Bytespider`, `meta-externalagent`, each with `Disallow: /`. When `"disallow"`, also skip writing `llms.txt` and `llms-full.txt`.
+- **`robots.txt`** (`renderRobots` in `src/shared/render/seo.js`): always `User-agent: *` / `Disallow: /drafts/` and the `Sitemap:` line. If `config.ai_crawlers` is `"disallow"`, add a block per agent: `GPTBot`, `ChatGPT-User`, `OAI-SearchBot`, `ClaudeBot`, `Claude-User`, `Claude-SearchBot`, `Google-Extended`, `CCBot`, `PerplexityBot`, `Applebot-Extended`, `Bytespider`, `meta-externalagent`, each with `Disallow: /`. When `"disallow"`, also skip writing `llms.txt` and `llms-full.txt`.
 - Drafts never get Markdown, JSON-LD or an entry in `llms.txt`.
 
 ---
@@ -475,9 +524,11 @@ Both functions return inline SVG markup and are used by the site and the editor.
 - IndexedDB (idb-keyval):
   - `trip:<id>` → `{ trip, folder: "drafts"|"published"|null, sha: string|null, dirty: boolean, path_at_sync: string|null, synced_at: ISO string|null, auto_sync }`. `folder: null` means never synced.
   - `config` → `{ config, sha }` (the data repo's `config.json`, cached for offline use).
+- `localStorage["tripbook.unsaved.<id>"]`: a record whose edits had not reached IndexedDB yet when the page was hidden or closed (§8.3). Recovered at startup when its `updated_at` is not older than the IndexedDB copy, then removed.
+- `localStorage["tripbook.demo.files"]`: the fake repo of demo mode (§8.9).
 - Never send the token anywhere except `https://api.github.com`.
 
-### 8.2 GitHub client (`src/editor/github.js`)
+### 8.2 GitHub client (`src/editor/core/github.js`)
 
 Plain `fetch` with headers `Authorization: Bearer <token>`, `Accept: application/vnd.github+json`, `X-GitHub-Api-Version: 2022-11-28`.
 
@@ -493,7 +544,7 @@ Plain `fetch` with headers `Authorization: Bearer <token>`, `Accept: application
 
 ### 8.3 Sync semantics
 
-- Every edit saves the local record immediately (`dirty: true`).
+- Every edit updates the in-memory record at once (`dirty: true`) and is written to IndexedDB 300 ms after the last change (typing does not write per keystroke). On `pagehide` and when the page becomes hidden, pending records are first copied synchronously to `localStorage["tripbook.unsaved.<id>"]` (an IndexedDB write started during unload may not finish), then written to IndexedDB; the stash is removed once the write completes. Saving a whole record (sync, refresh, capture) writes immediately.
 - **Sync**: if `folder` is null → create in `drafts/`. Else `putFile` to `<folder>/<id>.json` with the stored sha. Before sync: run `validateTrip`. Block and show errors inline if invalid. For published trips, apply the `old_paths` rule (§5.3) before writing. New trips are written with `v: SCHEMA_VERSION`.
 - **Publish** (draft): run Sync first if dirty, then `moveFile(drafts → published)`. **Unpublish**: the reverse.
 - **Conflict** (`ConflictError`): modal with *Load theirs* (fetch remote, replace local, `dirty: false`) and *Overwrite* (fetch remote sha, `putFile` with it). Show both titles and remote/local stop counts to help choose.
@@ -509,10 +560,10 @@ All screens are mobile-first and must also work well on desktop (max content wid
 1. **Setup** (first run, or Settings → "Change repo/token"): fields data repo owner and name (empty by default; placeholder `you/trips`), on localhost a **Use sample data** button (§8.9), token (password field with show toggle), **Test connection** (calls `getRepo`, `listFolder('drafts')` and reads `config.json`). Help text with a link to `https://github.com/settings/personal-access-tokens/new` and the exact permissions: *Repository access: only your data repo; Contents: Read and write; optional Actions: Read and write (for the Rebuild button)*.
 2. **Trips** (home): search box; two groups, *Drafts* and *Published*, each sorted by title; each row shows title, kind, location, stop count, badges (`Active`, `Not synced`). Buttons: **New trip**, and if an active trip exists, a large **Add place here** button pinned to the bottom.
 3. **Trip editor:**
-   - Top bar: back, title, sync status, **Sync**, **Publish**/**Unpublish**, overflow menu (Copy live link, Preview, Set as active trip, Make guide from this log, Delete).
-   - Header fields, in this order: **Title**; **Kind** (segmented Guide/Log) with **Slug** beside it (auto from title until edited; the computed URL path is shown as small text under the slug); **Trip note** (auto-growing textarea, Markdown hint); **PhotoField** (search a Wikipedia article title with `findWikipediaPhoto`, preview the lead image and credit, accept or clear it; the Find button sits beside the field); a collapsible **Location** toggle (same `details-toggle` style as the stop form's address toggle) that shows a summary (`city, region, country`) when collapsed and is open by default only when the trip has no country. Location fields: **Country** (text input with a `<datalist>` of all ISO countries from `src/editor/app/countries.js`, built with `Intl.DisplayNames`; choosing a known name also fills the country code), country code, region, city. Location is prefilled from the first stop when empty; leave region blank to omit it from the URL.
+   - Top bar (sticky under the app header): back, title with the sync status under it (`Not synced`, or `Synced <date, time>`), **Sync**, **Publish** (drafts only; under 520 px it moves into the menu), overflow menu (Copy live link, Preview, Publish on narrow phones, Unpublish for published trips, Set as / Clear active trip, Make guide from this log for logs, Delete). Validation errors from Sync show as a red list under the bar.
+   - Header fields, in this order: **Title**; **Kind** (segmented Guide/Log) with **Slug** beside it (auto from title until edited; the computed URL path is shown as small text under the slug); **Trip note** (auto-growing textarea, Markdown hint); **PhotoField** (search a Wikipedia article title with `findWikipediaPhoto`, preview the lead image and credit, accept or clear it; the Find button sits beside the field); a collapsible **Location** toggle (same `details-toggle` style as the stop form's address toggle) that shows a summary (`city, region, country`) when collapsed and is open by default only when the trip has no country. Location fields: **Country** (text input with a `<datalist>` of all ISO countries from `src/editor/core/countries.js`, built with `Intl.DisplayNames`, rendered by the memoized `CountryList` so typing elsewhere does not re-diff 250 options; choosing a known name also fills the country code), country code, region, city. Location is prefilled from the first stop when empty; leave region blank to omit it from the URL.
    - **Sections:** each with drag handle, letter, title input, style toggle (Route/List), section note (auto-growing textarea, collapsed to one line until focused), stop count, collapse toggle, overflow menu (Move up/down, Delete section).
-   - **Stops:** cards with drag handle, number (or letter for off-route stops), name, time, compact rating; tap to expand into the **compact stop form**, in this order:
+   - **Stops:** cards with drag handle, number (or letter for off-route stops), name, and on desktop (≥ 900 px) a time badge and an `Off route` badge, plus a menu (Move to…, Delete stop); tap to expand into the **compact stop form**, in this order:
      1. name, then the **note** (Markdown) directly under it;
      2. two columns: **time** on one side and **rating** (five 44 px tappable stars; tapping the current value clears it) to the left of it. Time = preset chips from `config.time_presets` (default 10, 30, 45, 1 h) plus a small numeric **minutes** input for custom values; custom minutes are rounded to 15-minute blocks when rendered (e.g. 105 → `1 h 45 min`);
      3. an **Off the route** checkbox (only for stops in `route` sections);
@@ -520,11 +571,11 @@ All screens are mobile-first and must also work well on desktop (max content wid
      5. **leg to next** (route sections).
    - **Add stop** button at the end of each section, opening the Capture sheet in "search" mode (no GPS required).
    - **Reorder mode** toggle: collapses all stop cards to one line for fast dragging.
-   - **Preview**: full-screen modal with an `<iframe srcdoc>` rendered by `renderTripPage` from `src/shared/render/trip.js`, using the preview assets listed in `build.json` (absolute URLs built from `location.origin`) and the cached config.
+   - **Preview**: full-screen modal with an `<iframe srcdoc>` (sandbox `allow-scripts allow-same-origin allow-popups`) rendered by `renderTripPage` from `src/shared/render/trip.js`, using the preview assets listed in `build.json` (absolute URLs built from `location.origin`, CSS as a `<link>`) and the cached config. The renderer is loaded with `import()` on first use, so it and `marked` are a lazy chunk.
 4. **Capture** (bottom sheet or full-screen on mobile; matches the approved mockup):
    - "Adding to: <trip>" with a trip picker (defaults to the active trip; "New trip…" creates a log titled with the city of the first result).
    - Location line: "Near <first result's area> · ±<accuracy> m".
-   - The search box also accepts pasted coordinates (`43.7110, 10.3994`, parsed by `parseCoordinates` in `places.js`): they are reverse-geocoded and shown as a pin result instead of calling Places text search (which rejects coordinates). Use this to start a guide at a point with no business.
+   - The search box also accepts pasted coordinates (`43.7110, 10.3994`, parsed by `parseCoordinates` in `core/places.js`): they are reverse-geocoded and shown as a pin result instead of calling Places text search (which rejects coordinates). Use this to start a guide at a point with no business.
    - Up to 10 suggestions as large radio cards (name, type, distance in m). The selected card expands to show time chips, the five-star rating input and a note field.
    - "Not listed? Search a place" (Places text search biased to the current location) and **Drop pin at my location**.
    - Primary button: **Add as stop N**.
@@ -535,19 +586,20 @@ All screens are mobile-first and must also work well on desktop (max content wid
 
 - One Sortable on the sections container (`group: "sections"`, `handle: ".drag-section"`).
 - One Sortable per section's stop list, all sharing `group: "stops"` so stops move across sections.
+- SortableJS is loaded with `import('sortablejs')` when a sortable list mounts (a lazy chunk), not in the main bundle.
 - Options for both: `animation: 150`, `forceFallback: true`, `fallbackOnBody: true`, `delay: 150`, `delayOnTouchOnly: true`, `scroll: true`, `bubbleScroll: true`, `ghostClass`, `chosenClass`, `dragClass` styled visibly.
 - **Preact integration gotcha:** Sortable mutates the DOM. In `onEnd`, first put the DOM node back where it was (`from.insertBefore(item, from.children[oldIndex] ?? null)`), then update state (move the stop between section arrays by index), and let Preact re-render. Key every list item by `id`.
 - Every stop card also has **Move to…** in its menu: choose section, then *Top* or *Bottom*. Same for keyboard users.
 - **Undo:** keep the previous trip state for the last structural change (move, delete, add section). Show a toast "Moved. Undo" for 6 s.
 - Pin numbers in Preview and map pickers reflect the new order immediately.
 
-### 8.6 Capture placement rules (`src/editor/capture.js`)
+### 8.6 Capture placement rules (`src/editor/core/capture.js`)
 
 - `kind: "log"`: find the section whose `auto_date` equals today's local date (`YYYY-MM-DD` in device time zone). If none, create one at the end: `{ title: "Day N", style: "list", auto_date: today }`, where N = number of sections with non-null `auto_date` + 1. Append the stop.
 - `kind: "guide"`: append to the last section, creating `{ title: "", style: "route" }` if there are none.
 - Unit-test both, including the date boundary.
 
-### 8.7 Places helpers (`src/editor/places.js`)
+### 8.7 Places helpers (`src/editor/core/places.js`)
 
 - Load Maps JS with the key from the cached `config.json`. If it is empty, Capture shows "Add a Google Maps key in Settings" and offers **Drop pin at my location** only (coordinates from the device, address fields left empty for the user).
 - `importLibrary("places")`, `importLibrary("geocoding")`.
@@ -562,15 +614,23 @@ All screens are mobile-first and must also work well on desktop (max content wid
 
 - `manifest.webmanifest`: name "Tripbook", short_name "Trips", `start_url: "/"`, `scope: "/"`, `display: "standalone"`, theme `#1A1D21`, background `#FFFFFF`, icons 192/512/maskable.
 - `apple-touch-icon` link and `apple-mobile-web-app-capable` meta in `index.html`.
-- `sw.js`: precache the shell (index, JS, CSS, manifest, icons, `build.json`, preview assets). Cache-first for shell files, network-only for `api.github.com` and Google domains. Delete old caches on activate. Show an "Update available, reload" toast when a new SW is waiting.
+- `sw.js`: precache the shell (index, JS including lazy chunks, CSS, manifest, icons, `build.json`, preview assets and fonts; §6.2 step 6). Cache-first for shell files, network-only for `api.github.com` and Google domains. Delete old caches on activate. Show an "Update available, reload" toast when a new SW is waiting.
 - `navigator.storage.persist()` on first run.
 - Settings shows a one-line tip: "Install to your home screen so the device keeps your offline drafts."
 
 ### 8.9 Demo mode (localhost only)
 
-- `src/editor/demo.js`: `createFakeGithub()` implements the same interface as `github.js` (`getRepo`, `listFolder`, `getFile`, `putFile`, `deleteFile`, `moveFile`, `dispatchRebuild`) over a JSON object kept in `localStorage`, with real sha and conflict behavior. `seedDemo(data)` fills it from `demo/data.json` (§6.2 step 8); `clearDemo()` resets it.
-- `settings.demo = true` makes `gh()` in `app/state.js` return the fake client; Setup's **Use sample data** button (visible only on `localhost`/`127.0.0.1`) seeds it and skips the token. Settings → Change repo/token leaves demo mode.
+- `src/editor/core/demo.js`: `createFakeGithub()` implements the same interface as `github.js` (`getRepo`, `listFolder`, `getFile`, `putFile`, `deleteFile`, `moveFile`, `dispatchRebuild`) over a JSON object kept in `localStorage["tripbook.demo.files"]`, with real sha and conflict behavior. `seedDemo(data)` fills it from `demo/data.json` (§6.2 step 8).
+- `settings.demo = true` makes `gh()` in `state/connection.js` return the fake client; Setup's **Use sample data** button (visible only on `localhost`/`127.0.0.1`) seeds it and skips the token. Settings → Change repo/token leaves demo mode.
 - Tests cover the fake client (including conflicts).
+
+### 8.10 Editor code structure
+
+- **UI** (`screens/`, `components/`) imports state and actions from `state/index.js` only, and pure helpers from `core/` and `src/shared/`. Templates use `html` from `components/html.js` (htm bound to Preact).
+- **State** (`state/`) holds signals and actions and never imports UI. The sync-conflict modal is UI, so `components/Conflict.js` exports `showConflict(id)` and `main.js` registers it with `registerConflictHandler`; `run()` in `state/actions.js` calls it on `ConflictError`.
+- **`updateTrip(id, fn)`** (`state/records.js`) clones the trip, lets `fn` mutate the clone (operations from `core/editing.js`), stamps `updated_at`, then applies `reuseUnchanged(prev, next)`: every section, stop or field that is deep-equal to before keeps its old object (array items with an `id` are matched by id, so moved ones are reused too). The record becomes `dirty`, the `trips` signal updates, and the IndexedDB write is scheduled (§8.3). `structural(id, message, fn)` wraps it with a 6 s Undo toast.
+- **`StopCard`** is wrapped in `memo` (from `components/controls.js`, a small `shouldComponentUpdate` with shallow prop comparison; no `preact/compat`). Its props are `tripId`, `stop`, `label`, `reorder`, `isRoute` (never the whole trip), so with structural sharing only the edited card re-renders. "Move to…" reads the trip from the `trips` signal at click time.
+- **Startup** (`main.js`): register the conflict handler; listen to `hashchange` (route), `online` (auto-retry), `visibilitychange` (auto-retry when visible, `flushPendingSaves` when hidden) and `pagehide` (`flushPendingSaves`); render `<App>`; `init()` (load IndexedDB records, `recoverUnsaved`, cached config, `build.json`, `storage.persist()`, redirect to `#/setup` when not configured, `ready = true`), then a quiet `refresh()`; `registerServiceWorker()`.
 
 ---
 
@@ -679,7 +739,7 @@ jobs:
 
 ### 9.3 Release (`tripbook/.github/workflows/release.yml`)
 
-Triggers: push to `main` touching `src/shared/**`, `src/site/**`, `src/build/build-site.mjs`, `src/build/bundle.mjs`, `package.json` or `package-lock.json`; and `workflow_dispatch`. Editor-only changes never release. Permissions `contents: write`; `concurrency: release` without cancelling. Env: `DATA_REPO` from `vars.DATA_REPO`, `DATA_REPO_TOKEN` from `secrets.DATA_REPO_TOKEN`.
+Triggers: push to `main` touching `src/shared/**`, `src/site/**`, `src/build/build-site.mjs`, `src/build/bundle.mjs`, `src/build/cli.mjs`, `package.json` or `package-lock.json`; and `workflow_dispatch`. Editor-only changes never release. Permissions `contents: write`; `concurrency: release` without cancelling. Env: `DATA_REPO` from `vars.DATA_REPO`, `DATA_REPO_TOKEN` from `secrets.DATA_REPO_TOKEN`.
 
 Steps: checkout with `fetch-depth: 0` and tags; setup-node 24 with npm cache; `npm ci`; `npm test`; **pick the version**: if HEAD already has a `v*` tag, skip everything; otherwise `MM` = `major.minor` of `package.json`, `LAST` = highest numeric patch among tags `v$MM.*`, tag = `v$MM.$((LAST+1))` (start at `.0`); `git tag` and push it; then, only if both `DATA_REPO` and `DATA_REPO_TOKEN` are set, with `GH_TOKEN=DATA_REPO_TOKEN`: `gh variable set TRIPBOOK_REF -R $DATA_REPO -b <tag>` and `gh workflow run site.yml -R $DATA_REPO`; otherwise print a `::notice::` saying the site was not rebuilt and to run `scripts/setup-auto-release.sh`. (A workflow's own `GITHUB_TOKEN` cannot set variables or dispatch workflows in another repo, hence the personal token.)
 
@@ -764,27 +824,24 @@ Use for local builds, tests and screenshots. No `place_id`s (null). Content belo
 
 ## 12. Tests (`test/`)
 
-`npm test` runs `node --test "test/*.test.js"`. Nine files, all of which must pass; no network calls (mock `fetch`; stub `places.js`). Cases per file:
+`npm test` runs `node --test "test/*.test.js"`. All files must pass; no network calls (mock `fetch`; Google calls are isolated in `core/places.js`). `test/fixtures.js` (not a test file) exports `load(path)`, `pisa()`, `sb()`, `layover()`: fresh copies of the example trips. One file per module or area:
 
-- `shared.test.js` (one file for all `src/shared` modules except render):
-  - slug: diacritics (`Città` → `citta`), spaces, punctuation, trimming.
-  - paths: both example paths; region omitted; country slug override; draft prefix; listing prefixes; collision detection.
-  - schema: valid examples pass; each rule fails with a readable message; unknown fields preserved; `v: 2` fails with the exact release message; `photo` (https only) and `off_route` validation; `mergeConfig`.
-  - maps-links: shortlist max 20 and order; null when no place_ids; directions chunking at 11 stops with a shared boundary stop; place_id alignment; 2048-char cap; `openInMaps` uses route stops for the directions fallback.
-  - markdown: links, bold, lists; `<script>` escaped; headings and images flattened; `stripMarkdown`.
-  - rating: star counts, gradient offset (`80%` for 4), unique ids, aria labels, `isLow`.
-  - visible: guide default hides low stops and numbers the rest 1..n without gaps; `showLow: true` includes and renumbers; multi-section labels `A1`, `B1`; totals and counts follow visibility; unrated stops never hidden; off-route stops get letters across the trip, take no number, are excluded from `routeStops`, and are ignored in `list` sections.
-  - format: `formatMinutes`, `shortAddress`, `locationText`.
+- `paths.test.js`: slugify (diacritics `Città` → `citta`, spaces, punctuation, trimming); both example paths; region omitted; country slug override; draft prefix; listing prefixes; collision detection.
+- `schema.test.js`: valid examples pass; each rule fails with a readable message (including `off_route` not boolean); unknown fields preserved; `v: 2` fails with the exact release message; factories validate; `photo` is optional and https only.
+- `maps-links.test.js`: `directionsUrl` is always an array (`[]` under 2 stops), chunking at 11 stops with a shared boundary stop, place_id alignment, all-or-nothing place ids, the 2048-char cap; `routeLinks` labels; `stopDirectionsUrl`; `openInMaps` (route stops only, single stop, none).
+- `format.test.js`: `formatMinutes`, `sectionLetter`, `shortAddress`; Markdown (links, bold, lists, `<script>` escaped, unsafe links dropped); `renderStarCompact` (clip width `12.8` for 4, deterministic, no `id`/`style`, aria label) and `isLow`.
+- `visible.test.js`: guide default hides low stops and numbers the rest 1..n without gaps; `showLow: true` includes and renumbers; multi-section labels `A1`, `B1`; totals and counts follow visibility; unrated stops never hidden; off-route stops get letters across the trip, take no number, are excluded from `routeStops`, hide with `showOffRoute: false`, and are ignored in `list` sections.
 - `render.test.js`:
   - Pisa page: stop names, numbers, dotted legs, trip note, section note, compact star markup for the rated stop; the off-route stop has class `off-route` and letter `A` and no leg connectors around it; the stats `(N stops · time)` appear in the trip note; no section tabs; no "without a Google place" text.
   - Santa Barbara log page: **no `captured_at` values, no `auto_date` values and no 4-digit years from those dates appear in the HTML**; Butterfly Beach is visible (no `hidden` attribute); the switch is present, checked, labelled `Show low-rated places (1)`; the empty "Waterfront" note produces no empty wrapper element.
   - Draft guide page: contains `noindex` and no gtag; the "Tourist-trap café" row exists with `hidden` and `data-low`; the switch is present and unchecked; visible numbers are 1, 2, 3; the default directions link does not include the café's coordinates.
-  - Pisa page has no switch; analytics only when the ID is set, never on drafts; the embedded `#trip-data` contains `minutes` and `off_route`; `og:image` appears only with a photo; listing cards show thumbnails and the credits block; user text is escaped.
-- `trip-md.test.js`: Pisa Markdown has the title, note, numbered stops with Google Maps links, the 5/5 rating, and the off-route stop under "Also recommended (not on the route):"; the layover guide puts "Tourist-trap café" only under `## Not recommended`; the Santa Barbara log lists Butterfly Beach inline; no ISO dates, no `place_id`, no `captured_at`; empty fields leave no empty labels; `llms.txt` lists both published trips with absolute `.md` URLs and never the draft; `llms-full.txt` contains both; JSON-LD parses, has visible stops only, no `rating` key and no dates; `robots.txt` with `ai_crawlers: "disallow"` lists each agent and the llms files are not written.
-- `build-site.test.js`: build `examples/data` into a temp dir via `buildSite`; assert the expected files exist (both trip pages, the draft page, `/index.html`, `/italy/index.html`, `/usa/california/index.html`, `sitemap.xml` without `lastmod`, `robots.txt`, hashed assets); the index and sitemap do not mention the draft; **the output contains no `.json` file at all**; each published trip has `index.md` and the draft does not; `llms.txt` and `llms-full.txt` exist; redirects for `old_paths`; collisions and validation errors fail the build.
-- `build-editor.test.js`: build into a temp dir via `buildEditor`; `index.html` references the hashed bundle; `build.json` has version and preview assets; `sw.js` lists the shell files; `manifest.webmanifest` has `start_url "/"`; the normal build has no `demo/` and the `--demo` build has `demo/data.json` that is not in the shell list.
-- `github.test.js` (mock `fetch`): base64 round trip with non-ASCII; 409 and sha-mismatch 422 → `ConflictError`; `moveFile` sends one tree with an add and a delete; paths have no `data/` prefix; sync, publish and conflict logic from `sync.js`; the fake client from `demo.js` (create, update, conflict, move, delete).
-- `editing.test.js`: slug follows the title until edited; moving stops across sections and reordering sections; `autofillLocation`; `makeGuide` (new id, "Guide: " prefix, dates cleared).
+  - Pisa page has no low-rated switch and has the off-path switch, checked; analytics only when the ID is set, never on drafts; `og:image` appears only with a photo; listing cards show thumbnails and the credits block; user text is escaped.
+  - `#trip-data`: every stop has only `CLIENT_STOP_FIELDS`, and `visibleStops`, `routeLinks` and `openInMaps` give the same labels, minutes and URLs on the client data as on the full trip (for each example, with an off-route stop, in three switch states). A source scan of `src/site/trip/*.js` finds no `stop.<field>` outside `CLIENT_STOP_FIELDS`.
+- `trip-md.test.js`: Pisa Markdown has the title, note, numbered stops with Google Maps links, the 5/5 rating, and the off-route stop under "Also recommended (not on the route):"; the layover guide puts "Tourist-trap café" only under `## Not recommended`; the Santa Barbara log lists Butterfly Beach inline; no ISO dates, no `place_id`, no `captured_at`; empty fields leave no empty labels; `llms.txt` lists both published trips with absolute `.md` URLs and never the draft; `llms-full.txt` contains both; JSON-LD parses, has visible stops only, no `rating` key and no dates.
+- `build-site.test.js`: build `examples/data` into a temp dir via `buildSite`; the expected files exist (both trip pages, the draft page, `/index.html`, `/italy/index.html`, `/usa/california/index.html`, `sitemap.xml`, `robots.txt`, `404.html`, `llms.txt`, `llms-full.txt`, `assets/trip.<hash>.js`, the Latin font) and **no `.css` file** is written; trip, index and 404 pages inline the CSS in `<style>`, preload the font that the `@font-face` rule points at, and reference no Google Fonts; the 404 page is `noindex`; the index and sitemap do not mention the draft and the sitemap has no `lastmod`; **the output contains no `.json` file at all**; each published trip has `index.md` and the draft does not; `robots.txt` and the generator meta; `ai_crawlers: "disallow"` lists each agent and skips the llms files; redirects for `old_paths` (a live path wins); invalid trips, newer schema and collisions fail with clear messages; an empty data repo builds.
+- `build-editor.test.js`: build into a temp dir via `buildEditor`; `index.html` references the hashed bundle and stylesheet, the manifest and Apple meta, no analytics; `build.json` has version, commit and preview assets that exist; `sw.js` has a cache version and lists the shell (including the preview font) but not itself; the app bundle `import()`s a `chunks/sortable…` and a `chunks/trip…` chunk, does not contain SortableJS, and both chunks exist and are in the shell; `manifest.webmanifest` has `start_url "/"` and existing icons, and `404.html` redirects to `/`; the normal build has no `demo/` and the `--demo` build has `demo/data.json` that is not in the shell.
+- `github.test.js` (mock `fetch`): base64 round trip with non-ASCII; headers and UTF-8 content; 409 and sha-mismatch 422 → `ConflictError`; `getFile`/`listFolder` 404 handling; `moveFile` sends one tree with an add and a delete and detects a changed source sha; sync, publish and pull logic from `core/sync.js`; the fake client from `core/demo.js` (create, update, conflict, move, delete).
+- `editing.test.js`: slug follows the title until edited; moving stops across sections and reordering sections; pin numbers follow the order; `deleteStop`, `addSection`; `reuseUnchanged` keeps identity for unchanged sections and stops (also after a move) and returns the previous object when nothing changed; `autofillLocation`; `makeGuide` (new id, "Guide: " prefix, dates cleared).
 - `capture.test.js`: Day N creation and reuse; date boundary at local midnight; guide placement; place and geocode result mapping; `parseCoordinates`.
 - `wikipedia.test.js`: photo lookup with licence data from a mocked Wikipedia and Commons.
 
@@ -830,15 +887,15 @@ Use for local builds, tests and screenshots. No `place_id`s (null). Content belo
 - Verify you are inside the container (`node --version` reports v24, `gh --version` works). If not, repeat the Phase 0 stop message and stop.
 - `npm init -y`, set `"type": "module"`, `"private": true`, `"version": "0.1.0"`, `"license": "MIT"`, engines `node >= 24`, and the scripts from §4. Install the dependencies from §3.
 - Create the folder layout from §4 (empty files are fine for later phases).
-- Implement `src/shared/` except `render/`: `schema.js`, `slug.js`, `paths.js`, `maps-links.js`, `maps-loader.js`, `markdown.js`, `format.js`, `rating.js`, `visible.js`, `wikipedia.js`.
+- Implement `src/shared/` except `render/`: `schema.js` (with the typedefs), `slug.js`, `paths.js`, `maps-links.js`, `maps-loader.js`, `markdown.js`, `format.js`, `rating.js`, `visible.js`, `wikipedia.js`, `theme.js`, `tokens.css`.
 - Write the example data (§11).
-- Write `shared.test.js` (§12) and `wikipedia.test.js`.
+- Write `test/fixtures.js`, `paths.test.js`, `schema.test.js`, `maps-links.test.js`, `format.test.js`, `visible.test.js` (§12) and `wikipedia.test.js`.
 
 **Done when:** `npm test` passes.
 
 ### Phase 2 — Site build and public site
 
-- Implement `src/shared/render/*` (including `trip-md.js`, `llms.js`, `jsonld.js`, `photo.js`, `icons.js`), `src/site/site.css`, `src/site/trip.js` (including the low-rating switch, §7.9, and off-route pins, §7.9a), `src/build/bundle.mjs`, `src/build/build-site.mjs` per §6.1 and §7.
+- Implement `src/shared/render/*` (including `seo.js`, `trip-md.js`, `llms.js`, `jsonld.js`, `photo.js`, `icons.js`), `src/site/site.css` (§7.1 style), the self-hosted fonts in `src/site/fonts/` (download the Space Grotesk 700 `latin` and `latin-ext` woff2 files listed by `https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&display=swap` with a modern browser User-Agent, and `OFL.txt` from `google/fonts` `ofl/spacegrotesk/`), the trip page script `src/site/trip/*` (§7.3, §7.4, including the switches, §7.9 and §7.9a), `src/build/bundle.mjs`, `src/build/cli.mjs`, `src/build/build-site.mjs` per §6.1 and §7.
 - Write `render.test.js`, `trip-md.test.js` and `build-site.test.js`.
 - Run `npm run build:example`. Inspect the generated HTML files by reading them (do not start a server). Check the structure matches §7.
 
@@ -847,16 +904,16 @@ Use for local builds, tests and screenshots. No `place_id`s (null). Content belo
 ### Phase 3 — Editor foundations: build, storage, GitHub, sync
 
 - `src/build/build-editor.mjs` (§6.2, including `--demo`) with a minimal app so it builds.
-- `src/editor/github.js`, `src/editor/store.js`, `src/editor/sync.js`, `src/editor/demo.js`, sync semantics (§8.1–§8.3) and demo mode (§8.9).
+- `src/editor/core/github.js`, `core/store.js`, `core/sync.js`, `core/demo.js`, the `state/` modules (§8.10), sync semantics (§8.1–§8.3) and demo mode (§8.9).
 - Screens: Setup, Trips list (with sync badges, the conflict modal, the "local changes not synced" banner), the Settings shell.
-- App shell: header, simple hash router (`#/`, `#/trip/<id>`, `#/settings`, `#/setup`), toast system, modal system.
+- App shell (`App.js`, `components/overlays.js`): header, simple hash router (`#/`, `#/trip/<id>`, `#/capture[/<tripId>~<sectionId>]`, `#/settings`, `#/setup`), toast system, modal system.
 - `github.test.js`, `build-editor.test.js`.
 
 **Done when:** tests pass; `npm run build:editor` passes; the built `index.html` references the hashed bundle.
 
 ### Phase 4 — Trip editor and drag and drop
 
-- Trip editor screen (§8.4 item 3) with the compact stop form (note, time and rating columns, off-route checkbox, collapsible address), PhotoField, `src/editor/editing.js`, the star input, section controls with notes, SortableJS (§8.5), Move to…, Undo, Reorder mode, Preview (shared renderer and `build.json` preview assets).
+- Trip editor screen (§8.4 item 3) with the compact stop form (note, time and rating columns, off-route checkbox, collapsible address), PhotoField, `src/editor/core/editing.js` (including `reuseUnchanged`), the star input, section controls with notes, SortableJS as a lazy chunk (§8.5), the memoized `StopCard` (§8.10), Move to…, Undo, Reorder mode, Preview (shared renderer as a lazy chunk and `build.json` preview assets).
 - Location auto-fill from the first stop, and the URL path preview.
 - Make guide from this log: copy to a new draft (new `id`, `kind: "guide"`, title prefixed "Guide: ", `auto_date` and `captured_at` cleared, section styles kept, all stops kept since guides hide low-rated ones by default), then open it.
 
@@ -864,7 +921,7 @@ Use for local builds, tests and screenshots. No `place_id`s (null). Content belo
 
 ### Phase 5 — Capture
 
-- `src/editor/places.js` (including `parseCoordinates`), `src/editor/capture.js`, the Capture screen (§8.4 item 4), the active trip, the **Add place here** button.
+- `src/editor/core/places.js` (including `parseCoordinates`), `src/editor/core/capture.js`, the Capture screen (§8.4 item 4), the active trip, the **Add place here** button.
 - `capture.test.js`.
 
 **Done when:** tests pass; builds pass.
@@ -880,7 +937,7 @@ Use for local builds, tests and screenshots. No `place_id`s (null). Content belo
 ### Phase 7 — Workflows, template, scripts, docs
 
 - `.github/workflows/editor.yml` (§9.1), `.github/workflows/release.yml` (§9.3), `templates/data-repo/*` (§9.2, §9.4), `.env.example`, all scripts (§10). Make the bash scripts executable. Run `bash -n` on each.
-- `AGENTS.md`: under 60 lines: commands, layout, the rules that are easy to break (privacy, escaping, `#trip-data`, shared numbering, secrets, service-worker cache, never run the deploy scripts), and the workflow (tests, keep this spec updated, no push unless asked).
+- `AGENTS.md`: under 80 lines: commands (`npm run check`), a "where to change what" table mapping common tasks to files, the rules that are easy to break (privacy, escaping, `CLIENT_STOP_FIELDS`, shared numbering, tokens/theme sync, CSS order notes, state never imports UI, secrets, service-worker cache, never run the deploy scripts), and the workflow (tests, keep this spec updated, no push unless asked).
 - Documentation (take real screenshots of the Pisa example with a real Maps key *without committing the key*; save as `docs/images/trip-desktop.jpg` and `trip-mobile.jpg`):
   - `README.md`: short and public-facing. Title and one-liner; both screenshots at the top; **What it does** (logs and guides, capture on the go, editing with drag and drop, notes and ratings, off-route recommendations, drafts and publishing, reader features, Markdown/`llms.txt`/JSON-LD, privacy); **How it works** (ASCII diagram of editor → data repo → pinned tripbook release → Pages site; stack in one line); **Run it locally** (`npm install`, `npm test`, `npm run build:example && npm run serve`, `npm run build:editor:demo && npm run serve:editor`, "Use sample data"); **Run your own** (link to DEPLOY); a documentation list; license.
   - `docs/DEVELOPMENT.md`: setup, command table, the example site and local Maps key (never commit it), trying the editor without GitHub (§8.9) and service-worker caveats, test table, code layout, conventions, how releases reach the site.
@@ -892,7 +949,7 @@ Use for local builds, tests and screenshots. No `place_id`s (null). Content belo
 ### Phase 8 — Final verification
 
 Run and fix until all are true:
-- `npm ci && npm test && npm run build:example && npm run build:editor` passes from a clean `node_modules`.
+- `npm ci && npm run check` passes from a clean `node_modules`.
 - `_site/` and `_editor/` contain every file listed in the build tests.
 - `grep -rE "20[0-9]{2}-[0-9]{2}-[0-9]{2}" _site --include=*.html --include=*.md --include=*.txt` finds nothing. If the user's own trip text ever contains a date, that is allowed; example data must not.
 - Draft HTML contains `noindex`; `_site/index.html`, `sitemap.xml` and `llms.txt` do not mention any draft.

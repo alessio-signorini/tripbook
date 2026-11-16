@@ -13,7 +13,9 @@ const filePath = (folder, id) => `${folder}/${id}.json`;
 const stopCount = (trip) => trip.sections.reduce((n, s) => n + s.stops.length, 0);
 export { stopCount };
 
-/** Records: { trip, folder: 'drafts'|'published'|null, sha, dirty, path_at_sync, auto_sync } */
+/** @typedef {import('../../shared/schema.js').TripRecord} TripRecord */
+
+/** A record for a trip that was never synced. @returns {TripRecord} */
 export function newRecord(trip) {
   return { trip, folder: null, sha: null, dirty: true, path_at_sync: null, auto_sync: false };
 }

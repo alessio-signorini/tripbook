@@ -1,3 +1,88 @@
+/*
+ * Trip JSON schema: types (JSDoc, no TypeScript), defaults, validation and factories.
+ * docs/DATA-MODEL.md is the human-readable version; keep both in sync. Unknown fields are preserved.
+ */
+
+/**
+ * @typedef {object} Location
+ * @property {string} country       Required (non-empty).
+ * @property {string} country_code  Two uppercase letters, or ''.
+ * @property {string} region        May be ''.
+ * @property {string} city          May be ''.
+ */
+
+/**
+ * @typedef {object} Photo  Cover photo from a Wikipedia article's lead image (https URLs).
+ * @property {string} url
+ * @property {string} [thumb]
+ * @property {string} [title]
+ * @property {string} [author]
+ * @property {string} [license]
+ * @property {string} [license_url]
+ * @property {string} [source_url]
+ */
+
+/**
+ * @typedef {object} Stop
+ * @property {string} id                 Unique in the trip ("p-xxxxxxxx").
+ * @property {string|null} place_id      Google place id.
+ * @property {string} name               Required.
+ * @property {string} address
+ * @property {string} city
+ * @property {string} region
+ * @property {string} country
+ * @property {string} country_code
+ * @property {number} lat                [-90, 90]
+ * @property {number} lng                [-180, 180]
+ * @property {'device'|'place'|'pin'} coords_source
+ * @property {number|null} minutes       Time at the stop; positive integer.
+ * @property {string|null} leg_to_next   e.g. "3 min walk" (route sections only).
+ * @property {string} note               Markdown.
+ * @property {number|null} rating        1-5; 1 and 2 are "low".
+ * @property {true} [off_route]          In a route section: recommended but not on the path.
+ * @property {string|null} captured_at   ISO date-time; never rendered on the site.
+ */
+
+/**
+ * @typedef {object} Section
+ * @property {string} id                 Unique in the trip ("s-xxxxxxxx").
+ * @property {string} title
+ * @property {string} note               Markdown.
+ * @property {'route'|'list'} style      route: numbered path with legs and route links; list: pins only.
+ * @property {string|null} auto_date     YYYY-MM-DD, set by capture in logs; never rendered.
+ * @property {Stop[]} stops
+ */
+
+/**
+ * @typedef {object} Trip  One file: drafts/<id>.json or published/<id>.json in the data repo.
+ * @property {number} v                  Schema version (SCHEMA_VERSION).
+ * @property {string} id                 Equals the file name without .json; never changes.
+ * @property {string} slug               Last URL segment.
+ * @property {'guide'|'log'} kind
+ * @property {string} title
+ * @property {string} note               Markdown.
+ * @property {string} lang
+ * @property {Location} location
+ * @property {Photo|null} [photo]
+ * @property {string[]} old_paths        Previous URL paths; each gets a redirect page.
+ * @property {Section[]} sections
+ * @property {string} created_at         ISO; never rendered.
+ * @property {string} updated_at         ISO; never rendered.
+ */
+
+/**
+ * @typedef {object} TripRecord  The editor's local copy of a trip (IndexedDB), see src/editor/core/sync.js.
+ * @property {Trip} trip
+ * @property {'drafts'|'published'|null} folder  null until first synced.
+ * @property {string|null} sha           Blob sha on GitHub, for conflict detection.
+ * @property {boolean} dirty             Local changes not synced.
+ * @property {string|null} path_at_sync  Site path at the last sync (to add old_paths on rename).
+ * @property {boolean} auto_sync         Retry sync automatically when back online.
+ * @property {string} [synced_at]        ISO; editor display only.
+ */
+
+/** @typedef {typeof DEFAULT_CONFIG} Config  config.json merged with DEFAULT_CONFIG. */
+
 export const SCHEMA_VERSION = 1;
 
 export const DEFAULT_CONFIG = {
@@ -16,6 +101,7 @@ export const DEFAULT_CONFIG = {
   ai_crawlers: 'allow',
 };
 
+/** @returns {Config} */
 export function mergeConfig(config) {
   return { ...DEFAULT_CONFIG, ...(config || {}) };
 }
@@ -132,6 +218,7 @@ export function validateTrip(trip, file = '') {
 
 const nowIso = () => new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
 
+/** @returns {Stop} */
 export function newStop(fields = {}) {
   return {
     id: `p-${crypto.randomUUID().slice(0, 8)}`,
@@ -154,6 +241,7 @@ export function newStop(fields = {}) {
   };
 }
 
+/** @returns {Section} */
 export function newSection(fields = {}) {
   return {
     id: `s-${crypto.randomUUID().slice(0, 8)}`,
@@ -166,6 +254,7 @@ export function newSection(fields = {}) {
   };
 }
 
+/** @returns {Trip} */
 export function newTrip(fields = {}, config = DEFAULT_CONFIG) {
   const now = nowIso();
   return {

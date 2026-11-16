@@ -1,6 +1,28 @@
 import { isLow } from './rating.js';
 import { sectionLetter, totalMinutes } from './format.js';
 
+/** @typedef {import('./schema.js').Trip} Trip */
+/** @typedef {import('./schema.js').Section} Section */
+/** @typedef {import('./schema.js').Stop} Stop */
+/**
+ * @typedef {object} StopEntry
+ * @property {Stop} stop
+ * @property {boolean} visible
+ * @property {boolean} offRoute
+ * @property {number} number   1-based among visible on-route stops of the section; 0 otherwise.
+ * @property {string} label    "3", "B2" (several sections) or "A" (off-route); '' when hidden.
+ */
+/**
+ * @typedef {object} SectionEntry
+ * @property {Section} section
+ * @property {string} letter          A, B, C...
+ * @property {StopEntry[]} stops      Every stop, in order.
+ * @property {Stop[]} visibleStops
+ * @property {Stop[]} routeStops      Visible and not off-route: the path, legs and route links.
+ * @property {number} count           visibleStops.length
+ * @property {number} minutes         Total minutes of visible stops.
+ */
+
 /**
  * Sections with their stops and number labels.
  * Every stop is returned with `visible`, `offRoute` and `label`; hidden stops get label ''.
@@ -10,6 +32,9 @@ import { sectionLetter, totalMinutes } from './format.js';
  * Returns [{ section, letter, stops: [{ stop, visible, offRoute, label, number }], visibleStops, routeStops, minutes }]
  * `showOffRoute` (default true) false hides off-route stops entirely.
  * `showLow` defaults to the trip kind: guides hide low-rated stops, logs show them.
+ * @param {Trip} trip
+ * @param {{ showLow?: boolean, showOffRoute?: boolean }} [opts]
+ * @returns {SectionEntry[]}
  */
 export function visibleStops(trip, { showLow = trip.kind === 'log', showOffRoute = true } = {}) {
   const multi = trip.sections.length > 1;
@@ -31,6 +56,7 @@ export function visibleStops(trip, { showLow = trip.kind === 'log', showOffRoute
   });
 }
 
+/** Visible stops of every section, in order. @returns {Stop[]} */
 export function allVisible(trip, opts) {
   return visibleStops(trip, opts).flatMap((s) => s.visibleStops);
 }

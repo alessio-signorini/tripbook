@@ -69,7 +69,7 @@ The **folder is the status** and the **file name is the trip `id`**, which never
 | `stops[]` | `id` unique in the trip; `name` required; `lat` in [-90, 90], `lng` in [-180, 180]; `place_id` string or `null`; `coords_source` is `"device"`, `"place"` or `"pin"`; `minutes` positive integer or `null`; `leg_to_next` string or `null`; `note` Markdown; `rating` integer 1–5 or `null`; `captured_at` ISO string or `null`. |
 | `stops[].off_route` | Optional `true`. In a `route` section, marks a recommended place that is not on the walking route (see below). Ignored in `list` sections. |
 
-Unknown fields are allowed and preserved, so newer data stays readable by older tools.
+Unknown fields are allowed and preserved, so newer data stays readable by older tools. The same shapes are JSDoc types (`Trip`, `Section`, `Stop`, `Photo`, `Location`) at the top of `src/shared/schema.js`, next to `validateTrip`.
 
 ### Ratings and low-rated places
 
@@ -77,7 +77,7 @@ A rating of 1 or 2 is *low*. Guides hide low-rated places by default and logs sh
 
 ### Off-route places
 
-An `off_route` stop stays in the list at the position you give it, with its time, rating, address and note. It is labelled with a letter (A, B, C… across the whole trip) instead of a number, drawn as a white pin with a gray outline, and left out of the dashed route line, the leg connectors and the **Route in Google Maps** link. It still counts in the stop total and time.
+An `off_route` stop stays in the list at the position you give it, with its time, rating, address and note. It is labelled with a letter (A, B, C… across the whole trip) instead of a number, drawn as a white pin with a gray outline, and left out of the dashed route line, the leg connectors and the **Route in Google Maps** link. It still counts in the stop total and time. When a trip has off-route places, the page shows a second switch, **Show places off the path**, on by default.
 
 ## `config.json`
 
@@ -108,7 +108,7 @@ All fields are optional; the defaults live in `src/shared/schema.js` (`DEFAULT_C
 
 ## What the site build writes
 
-For each published trip: `index.html`, `index.md` (a Markdown version), JSON-LD in the page. For the site: listing pages, `404.html`, `robots.txt`, `sitemap.xml`, `llms.txt`, `llms-full.txt`, hashed `assets/`. Drafts get a page only, with `noindex`, and appear in no listing, sitemap or `llms` file.
+For each published trip: `index.html`, `index.md` (a Markdown version), JSON-LD in the page. For the site: listing pages, `404.html`, `robots.txt`, `sitemap.xml`, `llms.txt`, `llms-full.txt`, and `assets/` (the hashed trip page script and the heading font; CSS is inlined in every page). Drafts get a page only, with `noindex`, and appear in no listing, sitemap or `llms` file.
 
 ## Privacy rules
 

@@ -3,12 +3,13 @@
   "version": "0.1.0",
   "scripts": {
     "test": "node --test \"test/*.test.js\"",
+    "check": "npm test && npm run build:example && npm run build:editor",
     "build:example": "node src/build/build-site.mjs --data examples/data --out _site",
     "build:editor": "node src/build/build-editor.mjs --out _editor",
+    "build:editor:demo": "node src/build/build-editor.mjs --out _editor --demo",
     "serve": "sirv _site --port 8080 --dev --host",
     "serve:editor": "sirv _editor --port 8081 --dev --host --single",
-    "icons": "node scripts/make-icons.mjs",
-    "build:editor:demo": "node src/build/build-editor.mjs --out _editor --demo"
+    "icons": "node scripts/make-icons.mjs"
   },
   "license": "MIT",
   "type": "module",

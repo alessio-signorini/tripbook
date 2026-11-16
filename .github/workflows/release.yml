@@ -9,6 +9,7 @@ on:
       - "src/site/**"
       - "src/build/build-site.mjs"
       - "src/build/bundle.mjs"
+      - "src/build/cli.mjs"
       - "package.json"
       - "package-lock.json"
   workflow_dispatch:
