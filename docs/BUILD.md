@@ -156,6 +156,7 @@ src/
     build-site.mjs        buildSite(); CLI: --data <dir> --out <dir>   (run by the data repo)
     build-editor.mjs      buildEditor(); CLI: --out <dir> [--demo]     (run by this repo)
   site/                   the public trip page in the browser
+    index.js              listing-page script: Google map with one pin per trip (links to the trip)
     site.css              all site styles (listing and trip pages)
     fonts/                space-grotesk-700-latin.woff2, space-grotesk-700-latin-ext.woff2, OFL.txt
     trip/
@@ -316,6 +317,7 @@ Field rules (implement in `validateTrip`; the site build fails with a clear mess
 {
   "site_title": "Trips",
   "author": "Alessio",
+  "intro": "",
   "base_url": "https://trips.signorini.us",
   "google_maps_api_key": "",
   "google_maps_map_id": "DEMO_MAP_ID",
@@ -329,6 +331,8 @@ Field rules (implement in `validateTrip`; the site build fails with a clear mess
   "ai_crawlers": "allow"
 }
 ```
+
+`intro`: optional Markdown shown under the title on the index page only (editor Settings).
 
 `ai_crawlers`: `"allow"` or `"disallow"` (§7.10).
 
@@ -370,6 +374,7 @@ Steps:
 6. Render each published trip to `<path>/index.html`. Render each draft to `/drafts<path>/index.html` with `noindex`.
 7. Render listing pages from published trips only: `/index.html` (all) and every listing prefix (`/italy/index.html`, `/usa/california/index.html`, …).
 8. Render redirects for `old_paths`.
+   Each listing groups trips in collapsible `<details>` (country, then region, with counts; open by default). With several countries it also shows a country list (`All` plus one button per country with its trip count); choosing one shows only that country's trips and, with `google_maps_api_key`, fades the other pins and fits the map to it (`#<Country>` in the URL). The map has one small pin per trip at the mean of its stops (`tripPins()`, data in `#trip-pins`). Script: `src/site/index.js`. Desktop (≥ 900 px): left column = portrait map above the country list (sticky), right column = trips; mobile: no map (Google Maps is not loaded), country chips, then trips. Hovering or focusing a trip card highlights its pin (and vice versa). On the root index the `intro` Markdown replaces the author byline.
 9. Write `404.html` through `renderLayout` (title `Not found · <site_title>`, `noindex`, no Open Graph tags, inlined CSS, body `<main class="listing"><h1>Page not found</h1><p><a href="/">Back to all trips</a></p></main>`), `robots.txt` (`renderRobots`, §7.10) and `sitemap.xml` (`renderSitemap`: listing URLs then published trip URLs, absolute with `base_url`, **no `lastmod`**), both from `src/shared/render/seo.js`.
 10. For each published trip, write `<path>/index.md` (§7.10). Write `/llms.txt` and `/llms-full.txt` from published trips only.
 11. Never copy anything from `--data` into `--out`. Only rendered files and bundled assets go into the output.

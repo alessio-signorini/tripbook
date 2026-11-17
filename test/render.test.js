@@ -161,3 +161,37 @@ test('list sections are lettered off-route; solo buttons only with several secti
   single.sections.pop();
   assert.doesNotMatch(page(single), /data-solo/);
 });
+
+test('listing: collapsible groups and one map pin per trip when a Maps key is set', async () => {
+  const { renderListing } = await import('../src/shared/render/listing.js');
+  const items = [{ trip: pisa(), path: '/italy/pisa/pisa-in-one-walk/' }];
+  const html = renderListing(items, { config: { ...config, google_maps_api_key: 'K' }, assets: { ...assets, indexJs: '/assets/index.js' }, version: '0' });
+  assert.match(html, /<details class="group" data-country="Italy" open><summary><h2>Italy<\/h2>/);
+  assert.match(html, /id="world-map"/);
+  assert.match(html, /<details class="group" data-country="Italy" open><summary><h2>Italy<\/h2>/);
+  assert.match(html, /<li class="card[^"]*" data-trip="\/italy\/pisa\/pisa-in-one-walk\/"/);
+  const pins = JSON.parse(/id="trip-pins">([^<]*)</.exec(html)[1]);
+  assert.equal(pins.length, 1);
+  assert.equal(pins[0].path, '/italy/pisa/pisa-in-one-walk/');
+  assert.doesNotMatch(renderListing(items, { config, assets, version: '0' }), /world-map/);
+});
+
+test('listing: intro replaces the author byline, on the index only', async () => {
+  const { renderListing } = await import('../src/shared/render/listing.js');
+  const items = [{ trip: pisa(), path: '/italy/pisa/pisa-in-one-walk/' }];
+  const cfg = { ...config, author: 'Zed', intro: 'Hello **world** <b>x</b>' };
+  const html = renderListing(items, { config: cfg, assets, version: '0' });
+  assert.match(html, /<div class="intro md"><p>Hello <strong>world<\/strong>/);
+  assert.doesNotMatch(html, /By Zed/);
+  assert.doesNotMatch(renderListing(items, { config: cfg, assets, version: '0', crumbs: [{ path: '/italy/', name: 'Italy' }] }), /class="intro/);
+});
+
+test('listing: country buttons with counts when there are several countries', async () => {
+  const { renderListing } = await import('../src/shared/render/listing.js');
+  const other = { ...pisa(), title: 'Elsewhere', location: { country: 'Peru', country_code: 'PE', region: '', city: 'Lima' } };
+  const items = [{ trip: pisa(), path: '/italy/pisa/pisa-in-one-walk/' }, { trip: other, path: '/peru/lima/elsewhere/' }];
+  const html = renderListing(items, { config, assets, version: '0' });
+  assert.match(html, /data-country="">All<span class="count">2<\/span>/);
+  assert.match(html, /data-country="Peru">Peru<span class="count">1<\/span>/);
+  assert.doesNotMatch(renderListing(items.slice(0, 1), { config, assets, version: '0' }), /class="countries"/);
+});

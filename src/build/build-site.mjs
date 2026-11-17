@@ -135,9 +135,10 @@ export async function buildSite({ data, out, log = console.log }) {
  */
 async function buildAssets(dir) {
   const js = await bundleJs(join(root, 'src/site/trip/main.js'), dir, 'trip');
+  const indexJs = await bundleJs(join(root, 'src/site/index.js'), dir, 'index');
   const css = await bundleCss(join(root, 'src/site/site.css'), dir, 'site', { publicPath: '/assets', emitEntry: false });
   const font = css.files.find((f) => /^space-grotesk-700-latin-[^.]+\.woff2$/.test(f) && !f.includes('latin-ext'));
-  return { js: `/assets/${js.name}`, cssText: css.text.trim(), font: font && `/assets/${font}` };
+  return { js: `/assets/${js.name}`, indexJs: `/assets/${indexJs.name}`, cssText: css.text.trim(), font: font && `/assets/${font}` };
 }
 
 function notFound(config, assets, version) {

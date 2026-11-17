@@ -89,6 +89,7 @@ export const SCHEMA_VERSION = 1;
 export const DEFAULT_CONFIG = {
   site_title: 'Trips',
   author: '',
+  intro: '',
   base_url: '',
   google_maps_api_key: '',
   google_maps_map_id: 'DEMO_MAP_ID',

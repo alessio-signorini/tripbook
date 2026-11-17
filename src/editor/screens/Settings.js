@@ -20,6 +20,7 @@ function fromForm(f, base) {
     ...base,
     site_title: f.site_title,
     author: f.author,
+    intro: f.intro.trim(),
     base_url: f.base_url.replace(/\/+$/, ''),
     google_maps_api_key: f.google_maps_api_key.trim(),
     google_maps_map_id: f.google_maps_map_id.trim() || 'DEMO_MAP_ID',
@@ -84,6 +85,7 @@ export function Settings() {
       ${text('site_title', 'Site title')}
       ${text('author', 'Author')}
     </div>
+    <${Field} label="Intro (index page, Markdown)"><textarea rows="3" value=${form.intro} onInput=${set('intro')} /><//>
     ${text('base_url', 'Site URL', { placeholder: 'https://trips.example.com', inputmode: 'url' })}
     <div class="grid2">
       ${text('google_maps_api_key', 'Google Maps API key', { autocomplete: 'off' })}
