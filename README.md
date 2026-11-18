@@ -1,10 +1,8 @@
 # 🗺️ Tripbook
 
-PWA to edit and publish your **city guides** or **trip logs** on your own domain via Github Pages.
+Tripbook is two small pieces and no backend. An **editor** (an installable web app) saves your trips as JSON files in a private GitHub repo, and **GitHub Actions** turns that repo into a fast static website. GitHub is the database; Google Maps draws the maps.
 
 ![screenshot](docs/images/trip-desktop.jpg)
-
-Tripbook is two small pieces and no backend. An **editor** (an installable web app) saves your trips as JSON files in a private GitHub repo, and **GitHub Actions** turns that repo into a fast static website. GitHub is the database; Google Maps draws the maps.
 
 ## What it does
 
